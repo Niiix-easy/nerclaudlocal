@@ -1,0 +1,28 @@
+# Dependências
+node_modules/
+.npm-global/
+
+# Dados persistentes (Postgres, MinIO) — bind mount local. Se você mudou
+# DATA_PATH no .env para outro nome de pasta, adicione-a aqui também
+# (gitignore não expande variáveis de ambiente).
+neercloud-data/
+
+# Ambiente
+.env
+services/kubernetes/base/secrets.yaml
+
+# Build
+.next/
+dist/
+build/
+
+# Migrations locais (estado do neer db push)
+migrations/.applied.json
+
+# Tipos gerados (regenerar com `neer gen types`)
+types/database.ts
+
+# Logs e SO
+*.log
+.DS_Store
+Thumbs.db

@@ -1,0 +1,318 @@
+name: neercloud
+
+# ─────────────────────────────────────────────────────────────────────
+# Pensado para rodar em hardware doméstico modesto (ex: ZimaBoard/ZimaOS).
+# Duas coisas foram feitas por causa disso:
+#   1. Todas as portas publicadas vêm de variáveis de ambiente (.env),
+#      para evitar conflito com portas que o próprio ZimaOS já usa.
+#   2. Dados ficam em bind mounts sob ${DATA_PATH} (não volumes nomeados
+#      do Docker) — assim aparecem no gerenciador de arquivos do ZimaOS/
+#      CasaOS e podem ser copiados/backupeados normalmente.
+#   3. `profiles` permitem subir só o essencial em dispositivos com pouca
+#      RAM: `docker compose --profile core up -d` já dá um backend
+#      funcional (Postgres+Auth+REST+Gateway+Dashboard).
+# Ver docs/ZIMAOS.md para o passo a passo completo.
+# ─────────────────────────────────────────────────────────────────────
+
+x-postgres-common: &postgres-common
+  image: postgres:16-alpine
+  environment:
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    POSTGRES_DB: neercloud
+    AUTHENTICATOR_PASSWORD: ${AUTHENTICATOR_PASSWORD}
+    AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD}
+  volumes:
+    - ${DATA_PATH:-./neercloud-data}/postgres:/var/lib/postgresql/data
+    - ./services/postgres/init:/docker-entrypoint-initdb.d
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U postgres"]
+    interval: 5s
+    timeout: 5s
+    retries: 10
+  mem_limit: ${POSTGRES_MEM_LIMIT:-512m}
+
+services:
+  # ── Núcleo: PostgreSQL ─────────────────────────────────────────────
+  postgres:
+    <<: *postgres-common
+    container_name: neercloud-postgres
+    profiles: ["core"]
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    networks: [neercloud]
+
+  # ── Connection Pooling (PgBouncer) ──────────────────────────────────
+  # NOTA DE PRODUÇÃO: usa AUTH_TYPE=trust + usuário único de backend.
+  # Funciona porque REST/GraphQL trocam de role via SET ROLE após
+  # conectar (RLS é avaliada pelo role efetivo). Para produção real,
+  # prefira Supavisor ou configure scram-sha-256 + userlist.txt.
+  pooler:
+    image: edoburu/pgbouncer:latest
+    container_name: neercloud-pooler
+    profiles: ["core"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: neercloud
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: "500"
+      DEFAULT_POOL_SIZE: "15"
+      AUTH_TYPE: trust
+      ADMIN_USERS: postgres
+    ports:
+      - "${POOLER_PORT:-6432}:6432"
+    mem_limit: ${POOLER_MEM_LIMIT:-64m}
+    networks: [neercloud]
+
+  # ── REST automático a partir das tabelas ───────────────────────────
+  rest:
+    image: postgrest/postgrest:latest
+    container_name: neercloud-rest
+    profiles: ["core"]
+    depends_on:
+      pooler:
+        condition: service_started
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${AUTHENTICATOR_PASSWORD}@pooler:6432/neercloud
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_JWT_AUD: authenticated
+    mem_limit: ${REST_MEM_LIMIT:-128m}
+    networks: [neercloud]
+
+  # ── Auth (login, OAuth, JWT, MFA) ───────────────────────────────────
+  # NOTA: `${VAR:+true}` exige Docker Compose v2 (plugin `docker compose`,
+  # não o binário antigo `docker-compose` v1). ZimaOS já vem com v2.
+  auth:
+    image: supabase/gotrue:latest
+    container_name: neercloud-auth
+    profiles: ["core"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${AUTH_DB_PASSWORD}@postgres:5432/neercloud
+      GOTRUE_DB_NAMESPACE: auth
+      # Troque pelo IP/host real do seu ZimaOS na rede local — "localhost"
+      # só funciona quando você acessa a partir do próprio servidor.
+      GOTRUE_SITE_URL: ${PUBLIC_DASHBOARD_URL:-http://localhost:3000}
+      GOTRUE_URI_ALLOW_LIST: "*"
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_DISABLE_SIGNUP: "false"
+      # Sem SMTP configurado, signup ficaria travado esperando confirmação
+      # por email que nunca chega. Autoconfirma em dev/home-lab; troque por
+      # GOTRUE_SMTP_* + remova esta linha se for expor a internet de verdade.
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      # Login social — usuários finais dos apps construídos sobre o
+      # NeerCloud podem entrar com GitHub/Google. Deixe em branco (não
+      # defina CLIENT_ID) para desativar um provider; GoTrue simplesmente
+      # não anuncia o provider se as credenciais estiverem vazias.
+      GOTRUE_EXTERNAL_GITHUB_ENABLED: ${GITHUB_OAUTH_CLIENT_ID:+true}
+      GOTRUE_EXTERNAL_GITHUB_CLIENT_ID: ${GITHUB_OAUTH_CLIENT_ID}
+      GOTRUE_EXTERNAL_GITHUB_SECRET: ${GITHUB_OAUTH_CLIENT_SECRET}
+      GOTRUE_EXTERNAL_GITHUB_REDIRECT_URI: ${PUBLIC_GATEWAY_URL:-http://localhost:8000}/auth/v1/callback
+      GOTRUE_EXTERNAL_GOOGLE_ENABLED: ${GOOGLE_OAUTH_CLIENT_ID:+true}
+      GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID}
+      GOTRUE_EXTERNAL_GOOGLE_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET}
+      GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI: ${PUBLIC_GATEWAY_URL:-http://localhost:8000}/auth/v1/callback
+    mem_limit: ${AUTH_MEM_LIMIT:-128m}
+    networks: [neercloud]
+
+  # ── Realtime (WAL → WebSocket) — opcional, perfil "realtime" ────────
+  realtime:
+    image: supabase/realtime:latest
+    container_name: neercloud-realtime
+    profiles: ["realtime"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: neercloud
+      DB_USER: supabase_admin
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_ENC_KEY: ${REALTIME_ENC_KEY}
+      API_JWT_SECRET: ${JWT_SECRET}
+      SECRET_KEY_BASE: ${REALTIME_SECRET_KEY_BASE}
+    mem_limit: ${REALTIME_MEM_LIMIT:-256m}
+    networks: [neercloud]
+
+  # ── Storage (S3-compatible) — opcional, perfil "storage" ────────────
+  minio:
+    image: minio/minio:latest
+    container_name: neercloud-minio
+    profiles: ["storage"]
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - ${DATA_PATH:-./neercloud-data}/minio:/data
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    mem_limit: ${MINIO_MEM_LIMIT:-256m}
+    networks: [neercloud]
+
+  storage:
+    build: ./services/storage
+    container_name: neercloud-storage
+    profiles: ["storage"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/neercloud
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "${STORAGE_PORT:-3002}:3002"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    mem_limit: ${STORAGE_MEM_LIMIT:-128m}
+    networks: [neercloud]
+
+  # ── Edge Functions runtime — opcional, perfil "functions" ───────────
+  functions:
+    build: ./services/functions
+    container_name: neercloud-functions
+    profiles: ["functions"]
+    ports:
+      - "${FUNCTIONS_PORT:-8787}:8787"
+    mem_limit: ${FUNCTIONS_MEM_LIMIT:-128m}
+    networks: [neercloud]
+
+  # ── GraphQL automático — opcional, perfil "graphql" (serviço pesado) ─
+  graphql:
+    image: graphile/postgraphile:latest
+    container_name: neercloud-graphql
+    profiles: ["graphql"]
+    depends_on:
+      pooler:
+        condition: service_started
+    command:
+      - --connection
+      - postgres://postgres:${POSTGRES_PASSWORD}@pooler:6432/neercloud
+      - --schema
+      - public
+      - --port
+      - "5000"
+      # Kong tira o prefixo /graphql/v1 antes de encaminhar (strip_path),
+      # então a requisição chega na raiz — sem isto, o PostGraphile serviria
+      # em /graphql por padrão e todo request via gateway daria 404.
+      - --graphql
+      - /
+      - --jwt-secret
+      - ${JWT_SECRET}
+      - --default-role
+      - anon
+    ports:
+      - "${GRAPHQL_PORT:-5000}:5000"
+    mem_limit: ${GRAPHQL_MEM_LIMIT:-256m}
+    networks: [neercloud]
+
+  # ── Cache / reservado para filas e sessões futuras (não usado pelo
+  #    núcleo hoje — só suba se for implementar algo que dependa dele) ──
+  redis:
+    image: redis:7-alpine
+    container_name: neercloud-redis
+    profiles: ["cache"]
+    mem_limit: ${REDIS_MEM_LIMIT:-64m}
+    networks: [neercloud]
+
+  # ── API Gateway (entrada única) ──────────────────────────────────────
+  kong:
+    image: kong:3.6
+    container_name: neercloud-kong
+    profiles: ["core"]
+    depends_on: [rest, auth]
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong.yml
+      KONG_PROXY_LISTEN: "0.0.0.0:8000"
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+    volumes:
+      - ./services/kong/kong.yml:/kong.yml:ro
+    ports:
+      - "${GATEWAY_PORT:-8000}:8000"
+      - "${KONG_ADMIN_PORT:-8001}:8001"
+    mem_limit: ${KONG_MEM_LIMIT:-256m}
+    networks: [neercloud]
+
+  # ── Control Plane (orquestração: projetos, orgs, provisioning) ──────
+  control-plane:
+    build: ./services/control-plane
+    container_name: neercloud-control-plane
+    profiles: ["core"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/neercloud
+      JWT_SECRET: ${JWT_SECRET}
+      KONG_ADMIN_URL: http://kong:8001
+      # Usado para montar a webhookUrl mostrada ao conectar um repositório
+      # GitHub (services/control-plane/src/routes/github-management.js) —
+      # sem isso, sempre cairia no fallback "localhost", errado em qualquer
+      # acesso feito de fora do próprio servidor.
+      PUBLIC_GATEWAY_URL: ${PUBLIC_GATEWAY_URL:-http://localhost:8000}
+    ports:
+      - "${CONTROL_PLANE_PORT:-3001}:3001"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    mem_limit: ${CONTROL_PLANE_MEM_LIMIT:-128m}
+    networks: [neercloud]
+
+  # ── Dashboard (Studio) ───────────────────────────────────────────────
+  # NEXT_PUBLIC_* precisam ser injetadas em BUILD TIME (Next.js embute
+  # essas variáveis no bundle do browser) — por isso vêm via `args`, não
+  # `environment`. Troque PUBLIC_GATEWAY_URL/PUBLIC_CONTROL_PLANE_URL no
+  # .env pelo IP do seu ZimaOS na rede antes do primeiro build.
+  dashboard:
+    build:
+      context: ./services/dashboard
+      args:
+        NEXT_PUBLIC_CONTROL_PLANE_URL: ${PUBLIC_CONTROL_PLANE_URL:-http://localhost:3001}
+        NEXT_PUBLIC_API_GATEWAY_URL: ${PUBLIC_GATEWAY_URL:-http://localhost:8000}
+    container_name: neercloud-dashboard
+    profiles: ["core"]
+    depends_on:
+      control-plane:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/neercloud
+      STUDIO_ADMIN_PASSWORD: ${STUDIO_ADMIN_PASSWORD}
+      STUDIO_SESSION_SECRET: ${STUDIO_SESSION_SECRET}
+    ports:
+      - "${DASHBOARD_PORT:-3000}:3000"
+    mem_limit: ${DASHBOARD_MEM_LIMIT:-256m}
+    networks: [neercloud]
+
+networks:
+  neercloud:
+    driver: bridge
