@@ -16,6 +16,12 @@ services:
         paths:
           - /api/control-plane
         strip_path: true
+    plugins:
+      - name: request-transformer
+        config:
+          add:
+            headers:
+              - "X-NeerCloud-Internal: true"
 
   - name: dashboard
     url: http://dashboard:3000

@@ -182,7 +182,7 @@ services:
     image: kong:3.6
     container_name: neercloud-kong
     profiles: ["core"]
-    depends_on: [rest]
+    depends_on: [rest, control-plane, dashboard]
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /kong.yml
