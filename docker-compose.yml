@@ -133,7 +133,7 @@ services:
   functions:
     build: ./services/functions
     container_name: neercloud-functions
-    profiles: ["functions"]
+    profiles: ["core", "functions"]
     ports:
       - "${FUNCTIONS_PORT:-8787}:8787"
     mem_limit: ${FUNCTIONS_MEM_LIMIT:-128m}

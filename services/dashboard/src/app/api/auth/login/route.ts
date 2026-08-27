@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       const cookieStore = await cookies()
       cookieStore.set('neercloud_admin_auth', 'authenticated', {
         httpOnly: true,
-        secure: false,
+        secure: false, // Ensure this works over local HTTP for ZimaOS
         sameSite: 'lax',
         path: '/',
         maxAge: 60 * 60 * 24 // 24 hours

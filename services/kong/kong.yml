@@ -23,6 +23,22 @@ services:
             headers:
               - "X-NeerCloud-Internal: true"
 
+  - name: storage
+    url: http://storage:3002
+    routes:
+      - name: storage-route
+        paths:
+          - /api/storage
+        strip_path: true
+
+  - name: functions
+    url: http://functions:8787
+    routes:
+      - name: functions-route
+        paths:
+          - /api/functions
+        strip_path: true
+
   - name: dashboard
     url: http://dashboard:3000
     routes:
