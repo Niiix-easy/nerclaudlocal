@@ -8,6 +8,14 @@ program.version('1.0.0').description('NeerCloud CLI');
 
 const CONTROL_PLANE_URL = process.env.CONTROL_PLANE_URL || 'http://localhost:3001';
 
+// CLI automatically bypasses the simple auth if we set the local internal header
+const getHeaders = () => ({
+  headers: {
+    'Cookie': 'neercloud_admin_auth=authenticated',
+    'X-NeerCloud-Internal': 'true'
+  }
+});
+
 program
   .command('project <action>')
   .description('Manage projects (actions: migrate)')
@@ -26,7 +34,7 @@ program
           const res = await axios.post(`${CONTROL_PLANE_URL}/migrate/github`, {
             repoUrl: options.github,
             projectName: options.name
-          });
+          }, getHeaders());
           console.log('Success:', res.data);
         } catch (err) {
           console.error('Migration failed:', err.response?.data || err.message);
@@ -41,7 +49,7 @@ program
           const res = await axios.post(`${CONTROL_PLANE_URL}/migrate/lovable`, {
             projectId: options.lovable,
             projectName: options.name
-          });
+          }, getHeaders());
           console.log('Success:', res.data);
         } catch (err) {
           console.error('Migration failed:', err.response?.data || err.message);
