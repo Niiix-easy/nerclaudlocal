@@ -3,6 +3,7 @@ import React from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import Sidebar from "@/components/layout/Sidebar";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -11,10 +12,20 @@ export const metadata: Metadata = {
   description: "ZimaOS Local Dashboard",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en" className={`${inter.className} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html
+      lang="en"
+      className={`${inter.className} h-full antialiased bg-[#121212] text-white`}
+    >
+      <body className="min-h-full flex">
+        <Sidebar />
+        <div className="flex-1 flex flex-col min-h-screen">{children}</div>
+      </body>
     </html>
   );
 }
