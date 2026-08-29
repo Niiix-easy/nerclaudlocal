@@ -1,5 +1,6 @@
 const express = require('express');
 const Minio = require('minio');
+const crypto = require('crypto');
 const multer = require('multer');
 
 const app = express();
@@ -20,7 +21,8 @@ app.use((req, res, next) => {
 
   const token = tokenCookie.split('=')[1];
 
-  if (token !== 'authenticated') {
+  const expectedToken = crypto.createHmac('sha256', process.env.STUDIO_SESSION_SECRET || '').update('authenticated').digest('hex');
+  if (token !== expectedToken) {
     return res.status(401).json({ error: 'Invalid token' });
   }
 

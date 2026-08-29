@@ -1,3 +1,5 @@
+import { createHash, createHmac } from "node:crypto";
+
 const PORT = parseInt(Deno.env.get("PORT") || "8787");
 
 function extractAuthToken(req: Request): string | null {
@@ -20,7 +22,13 @@ const handler = async (req: Request): Promise<Response> => {
 
   // Very simplistic security check matching the rest of the application
   const token = extractAuthToken(req);
-  if (token !== "authenticated") {
+
+  const secret = Deno.env.get("STUDIO_SESSION_SECRET") || "";
+  const expectedToken = createHmac("sha256", secret)
+    .update("authenticated")
+    .digest("hex");
+
+  if (token !== expectedToken) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },

@@ -36,6 +36,7 @@ const Sidebar = () => {
     { name: 'Registros', href: '/logs', icon: List },
     { name: 'Integrações', href: '/integrations', icon: Blocks },
     { name: 'Configurações do proj...', href: '/settings', icon: Settings, separator: true },
+    { name: 'Webhooks', href: '/settings/webhooks', icon: Zap },
   ];
 
   return (

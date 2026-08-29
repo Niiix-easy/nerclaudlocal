@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 
 export default function LoginPage() {
@@ -98,20 +99,20 @@ export default function LoginPage() {
 
           <div className="flex items-center justify-between">
             <div className="text-sm">
-              <a
-                href="#"
+              <Link
+                href="/login/reset-password"
                 className="font-medium text-indigo-400 hover:text-indigo-300"
               >
                 Resetar senha
-              </a>
+              </Link>
             </div>
             <div className="text-sm">
-              <a
-                href="#"
+              <Link
+                href="/login/create-password"
                 className="font-medium text-indigo-400 hover:text-indigo-300"
               >
                 Fazer nova senha
-              </a>
+              </Link>
             </div>
           </div>
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export function middleware(request: NextRequest) {
-  const isLoginPage = request.nextUrl.pathname === "/login"
+  const isLoginPage = request.nextUrl.pathname.startsWith("/login")
   const isApiRoute = request.nextUrl.pathname.startsWith("/api")
   const isStatic = request.nextUrl.pathname.startsWith("/_next") ||
                    request.nextUrl.pathname.includes(".")

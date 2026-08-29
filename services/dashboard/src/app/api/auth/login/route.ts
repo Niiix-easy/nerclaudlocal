@@ -15,7 +15,7 @@ export async function POST(request: Request) {
 
     if (password === adminPassword) {
       // Secure simple token: HMAC of the string 'authenticated' with the session secret
-      const token = 'authenticated';
+      const token = crypto.createHmac('sha256', sessionSecret).update('authenticated').digest('hex');
 
       const cookieStore = await cookies()
       cookieStore.set('neercloud_admin_auth', token, {

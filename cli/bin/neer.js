@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const crypto = require('crypto');
 const { Command } = require('commander');
 const axios = require('axios');
 
@@ -9,12 +10,16 @@ program.version('1.0.0').description('NeerCloud CLI');
 const CONTROL_PLANE_URL = process.env.CONTROL_PLANE_URL || 'http://localhost:3001';
 
 // CLI automatically bypasses the simple auth if we set the local internal header
-const getHeaders = () => ({
-  headers: {
-    'Cookie': 'neercloud_admin_auth=authenticated',
-    'X-NeerCloud-Internal': 'true'
-  }
-});
+const getHeaders = () => {
+  const secret = process.env.STUDIO_SESSION_SECRET || '642483de80302b1f3c398e4d3db2cd4d6731e05084bdba82f3efb27d427bf2e2';
+  const expectedToken = crypto.createHmac('sha256', secret).update('authenticated').digest('hex');
+  return {
+    headers: {
+      'Cookie': `neercloud_admin_auth=${expectedToken}`,
+      'X-NeerCloud-Internal': 'true'
+    }
+  };
+};
 
 program
   .command('project <action>')

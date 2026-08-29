@@ -2,6 +2,7 @@ const express = require('express');
 const { Pool } = require('pg');
 const git = require('isomorphic-git');
 const http = require('isomorphic-git/http/node');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
@@ -25,7 +26,8 @@ app.use((req, res, next) => {
 
   const token = tokenCookie.split('=')[1];
 
-  if (token !== 'authenticated') {
+  const expectedToken = crypto.createHmac('sha256', process.env.STUDIO_SESSION_SECRET || '').update('authenticated').digest('hex');
+  if (token !== expectedToken) {
     return res.status(401).json({ error: 'Invalid token' });
   }
 
@@ -273,6 +275,42 @@ app.delete('/api/db/tables/:schema/:name/data', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to delete row', details: err.message });
+  }
+});
+
+app.post('/project/pause', async (req, res) => {
+  // Mock pausing a project
+  console.log('Project pause requested');
+  setTimeout(() => {
+    res.json({ message: 'Project paused successfully', status: 'paused' });
+  }, 1000);
+});
+
+app.post('/project/resume', async (req, res) => {
+  // Mock resuming a project
+  console.log('Project resume requested');
+  setTimeout(() => {
+    res.json({ message: 'Project resumed successfully', status: 'active' });
+  }, 1000);
+});
+
+app.post('/project/backup', async (req, res) => {
+  console.log('Project backup requested');
+  res.json({ message: 'Backup generated successfully', downloadUrl: '#' });
+});
+
+app.post('/project/upgrade', async (req, res) => {
+  console.log('Project upgrade requested');
+  res.json({ message: 'Upgrade process initiated', status: 'pending' });
+});
+
+app.post('/db/query', async (req, res) => {
+  const { query } = req.body;
+  try {
+    const result = await pool.query(query);
+    res.json({ rows: result.rows || [], fields: result.fields || [] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
