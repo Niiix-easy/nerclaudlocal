@@ -14,6 +14,54 @@ export default function Home() {
     type: null,
   });
 
+  const [projectState, setProjectState] = useState<"active" | "paused">("paused");
+
+  const handlePauseResume = async () => {
+    const action = projectState === "paused" ? "resume" : "pause";
+    setMigrationStatus({ loading: true, message: `${action === "resume" ? "Resuming" : "Pausing"} project...`, type: "info" });
+    try {
+      const res = await fetch(`/api/control-plane/project/${action}`, { method: "POST" });
+      if (res.ok) {
+        setProjectState(action === "resume" ? "active" : "paused");
+        setMigrationStatus({ loading: false, message: `Project ${action}d successfully.`, type: "success" });
+      } else {
+        setMigrationStatus({ loading: false, message: `Failed to ${action} project.`, type: "error" });
+      }
+    } catch (e) {
+      setMigrationStatus({ loading: false, message: "Error communicating with server.", type: "error" });
+    }
+  };
+
+  const handleBackup = async () => {
+    setMigrationStatus({ loading: true, message: "Generating backup...", type: "info" });
+    try {
+      const res = await fetch("/api/control-plane/project/backup", { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        setMigrationStatus({ loading: false, message: `Backup ready: ${data.message}`, type: "success" });
+      } else {
+        setMigrationStatus({ loading: false, message: "Failed to generate backup.", type: "error" });
+      }
+    } catch (e) {
+      setMigrationStatus({ loading: false, message: "Error communicating with server.", type: "error" });
+    }
+  };
+
+  const handleUpgrade = async () => {
+    setMigrationStatus({ loading: true, message: "Initiating upgrade...", type: "info" });
+    try {
+      const res = await fetch("/api/control-plane/project/upgrade", { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        setMigrationStatus({ loading: false, message: data.message, type: "success" });
+      } else {
+        setMigrationStatus({ loading: false, message: "Failed to upgrade project.", type: "error" });
+      }
+    } catch (e) {
+      setMigrationStatus({ loading: false, message: "Error communicating with server.", type: "error" });
+    }
+  };
+
   const handleMigrateGitHub = async () => {
     const repoUrl = prompt("Enter GitHub Repository URL:");
     const projectName = prompt("Enter a name for this project:");
@@ -112,9 +160,14 @@ export default function Home() {
       <main className="flex-1 max-w-5xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Environment Status Panel */}
         <section className="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-lg">
-          <h2 className="text-2xl font-semibold mb-4 text-gray-100">
-            System Status
-          </h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold text-gray-100">
+              System Status
+            </h2>
+            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${projectState === "active" ? "bg-green-500/20 text-green-400" : "bg-yellow-500/20 text-yellow-400"}`}>
+              Project {projectState === "active" ? "Active" : "Paused"}
+            </span>
+          </div>
           <ul className="space-y-3">
             <li className="flex justify-between items-center bg-gray-700/50 p-3 rounded-lg">
               <span className="font-medium text-gray-300">
@@ -158,6 +211,33 @@ export default function Home() {
           </p>
 
           <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={handlePauseResume}
+                disabled={migrationStatus.loading}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {projectState === "paused" ? "Resume Project" : "Pause Project"}
+              </button>
+              <button
+                onClick={handleUpgrade}
+                disabled={migrationStatus.loading}
+                className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+              >
+                Upgrade to Pro
+              </button>
+            </div>
+
+            <button
+              onClick={handleBackup}
+              disabled={migrationStatus.loading}
+              className="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 mt-4"
+            >
+              Download Backups
+            </button>
+
+            <hr className="border-gray-700 my-4" />
+
             <button
               onClick={handleMigrateGitHub}
               disabled={migrationStatus.loading}

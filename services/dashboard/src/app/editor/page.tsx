@@ -21,7 +21,7 @@ export default function TableEditor() {
 
   const fetchTables = async () => {
     try {
-      const res = await fetch('/api/control-plane/api/db/tables');
+      const res = await fetch('/api/control-plane/db/tables');
       if (res.ok) {
         const data = await res.json();
         setTables(data.tables);
@@ -37,7 +37,7 @@ export default function TableEditor() {
     setSelectedTable({ schema, name });
     setTableData({ rows: [], columns: [] });
     try {
-      const res = await fetch(`/api/control-plane/api/db/tables/${schema}/${name}/data`);
+      const res = await fetch(`/api/control-plane/db/tables/${schema}/${name}/data`);
       if (res.ok) {
         const data = await res.json();
         setTableData(data);
@@ -84,7 +84,7 @@ export default function TableEditor() {
     if (!confirm(`Are you sure you want to delete row with id ${row.id}?`)) return;
 
     try {
-      const res = await fetch(`/api/control-plane/api/db/tables/${selectedTable.schema}/${selectedTable.name}/data`, {
+      const res = await fetch(`/api/control-plane/db/tables/${selectedTable.schema}/${selectedTable.name}/data`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: row.id })
@@ -117,13 +117,13 @@ export default function TableEditor() {
     try {
       let res;
       if (modalMode === 'insert') {
-        res = await fetch(`/api/control-plane/api/db/tables/${selectedTable.schema}/${selectedTable.name}/data`, {
+        res = await fetch(`/api/control-plane/db/tables/${selectedTable.schema}/${selectedTable.name}/data`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(cleanedData)
         });
       } else {
-        res = await fetch(`/api/control-plane/api/db/tables/${selectedTable.schema}/${selectedTable.name}/data`, {
+        res = await fetch(`/api/control-plane/db/tables/${selectedTable.schema}/${selectedTable.name}/data`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ filter: selectedRowKey, data: cleanedData })
