@@ -159,7 +159,7 @@ app.post('/migrate/lovable', async (req, res) => {
   }
 });
 
-app.get('/api/db/tables', async (req, res) => {
+app.get('/db/tables', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT table_schema, table_name
@@ -174,7 +174,7 @@ app.get('/api/db/tables', async (req, res) => {
   }
 });
 
-app.get('/api/db/tables/:schema/:name/data', async (req, res) => {
+app.get('/db/tables/:schema/:name/data', async (req, res) => {
   const { schema, name } = req.params;
   try {
     const query = format('SELECT * FROM %I.%I LIMIT 100', schema, name);
@@ -186,7 +186,7 @@ app.get('/api/db/tables/:schema/:name/data', async (req, res) => {
   }
 });
 
-app.post('/api/db/tables/:schema/:name/data', async (req, res) => {
+app.post('/db/tables/:schema/:name/data', async (req, res) => {
   const { schema, name } = req.params;
   const data = req.body;
 
@@ -211,7 +211,7 @@ app.post('/api/db/tables/:schema/:name/data', async (req, res) => {
   }
 });
 
-app.put('/api/db/tables/:schema/:name/data', async (req, res) => {
+app.put('/db/tables/:schema/:name/data', async (req, res) => {
   const { schema, name } = req.params;
   const { filter, data } = req.body;
 
@@ -248,7 +248,7 @@ app.put('/api/db/tables/:schema/:name/data', async (req, res) => {
   }
 });
 
-app.delete('/api/db/tables/:schema/:name/data', async (req, res) => {
+app.delete('/db/tables/:schema/:name/data', async (req, res) => {
   const { schema, name } = req.params;
   const filter = req.body;
 
