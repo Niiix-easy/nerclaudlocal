@@ -5,6 +5,16 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seeding Neer-Data-Base Database...');
 
+  // 0. Create Admin User
+  await prisma.user.upsert({
+    where: { email: 'neersoftwarebr@gmail.com' },
+    update: {},
+    create: {
+      email: 'neersoftwarebr@gmail.com',
+      name: 'Neer Admin',
+    },
+  });
+
   // 1. Create Products
   const productsData = [
     { slug: 'database', name: 'Database' },

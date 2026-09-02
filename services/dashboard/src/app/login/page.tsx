@@ -26,7 +26,7 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ password }), // We still send only password to backend, as requested for simplistic auth, or add username if backend uses it.
+        body: JSON.stringify({ email: username, password }),
       });
 
       if (res.ok) {

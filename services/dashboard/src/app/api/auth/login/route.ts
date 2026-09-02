@@ -4,16 +4,17 @@ import crypto from 'crypto';
 
 export async function POST(request: Request) {
   try {
-    const { password } = await request.json()
-    const adminPassword = process.env.STUDIO_ADMIN_PASSWORD
+    const { email, password } = await request.json()
+    const adminEmail = process.env.STUDIO_ADMIN_EMAIL || 'neersoftwarebr@gmail.com'
+    const adminPassword = process.env.STUDIO_ADMIN_PASSWORD || '25150605'
     const sessionSecret = process.env.STUDIO_SESSION_SECRET
 
-    if (!adminPassword || !sessionSecret) {
-      console.error('STUDIO_ADMIN_PASSWORD or STUDIO_SESSION_SECRET is not set in environment variables')
+    if (!sessionSecret) {
+      console.error('STUDIO_SESSION_SECRET is not set in environment variables')
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
     }
 
-    if (password === adminPassword) {
+    if (email === adminEmail && password === adminPassword) {
       // Secure simple token: HMAC of the string 'authenticated' with the session secret
       const token = crypto.createHmac('sha256', sessionSecret).update('authenticated').digest('hex');
 
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true })
     }
 
-    return NextResponse.json({ error: 'Invalid password' }, { status: 401 })
+    return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

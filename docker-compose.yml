@@ -276,6 +276,7 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/neer-data-base
+      STUDIO_ADMIN_EMAIL: ${STUDIO_ADMIN_EMAIL}
       STUDIO_ADMIN_PASSWORD: ${STUDIO_ADMIN_PASSWORD}
       STUDIO_SESSION_SECRET: ${STUDIO_SESSION_SECRET}
     ports:
