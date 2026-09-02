@@ -2,8 +2,10 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useI18n } from "@/contexts/I18nContext";
 
 export default function Home() {
+  const { t } = useI18n();
   const [migrationStatus, setMigrationStatus] = useState<{
     loading: boolean;
     message: string;
@@ -152,7 +154,7 @@ export default function Home() {
     <div className="flex flex-col min-h-screen bg-gray-900 text-white font-sans p-8">
       <header className="mb-12 border-b border-gray-700 pb-4">
         <h1 className="text-4xl font-bold tracking-tight">
-          Neer-Data-Base Dashboard
+          {t("brand")} Dashboard
         </h1>
         <p className="text-gray-400 mt-2 text-lg">ZimaOS Local Environment</p>
       </header>
