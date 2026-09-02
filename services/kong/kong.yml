@@ -21,7 +21,7 @@ services:
         config:
           add:
             headers:
-              - "X-NeerCloud-Internal: true"
+              - "X-Neer-Data-Base-Internal: true"
 
   - name: storage
     url: http://storage:3002

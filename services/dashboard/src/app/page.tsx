@@ -152,7 +152,7 @@ export default function Home() {
     <div className="flex flex-col min-h-screen bg-gray-900 text-white font-sans p-8">
       <header className="mb-12 border-b border-gray-700 pb-4">
         <h1 className="text-4xl font-bold tracking-tight">
-          NeerCloud Dashboard
+          Neer-Data-Base Dashboard
         </h1>
         <p className="text-gray-400 mt-2 text-lg">ZimaOS Local Environment</p>
       </header>
@@ -339,7 +339,7 @@ export default function Home() {
 
       <footer className="mt-16 text-center text-gray-500 text-sm">
         <p>
-          NeerCloud BaaS - Running 100% locally on ZimaOS. No external
+          Neer-Data-Base BaaS - Running 100% locally on ZimaOS. No external
           dependencies.
         </p>
       </footer>

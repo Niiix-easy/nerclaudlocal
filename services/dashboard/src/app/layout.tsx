@@ -8,7 +8,7 @@ import Sidebar from "@/components/layout/Sidebar";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "NeerCloud Dashboard",
+  title: "Neer-Data-Base Dashboard",
   description: "ZimaOS Local Dashboard",
 };
 

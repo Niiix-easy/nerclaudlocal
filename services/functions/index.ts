@@ -6,7 +6,7 @@ function extractAuthToken(req: Request): string | null {
   const cookieHeader = req.headers.get("cookie");
   if (!cookieHeader) return null;
 
-  const match = cookieHeader.match(/neercloud_admin_auth=([^;]+)/);
+  const match = cookieHeader.match(/neer-data-base_admin_auth=([^;]+)/);
   return match ? match[1] : null;
 }
 

@@ -11,7 +11,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const authCookie = request.cookies.get("neercloud_admin_auth")
+  const authCookie = request.cookies.get("neer-data-base_admin_auth")
 
   // For API routes (like proxy endpoints), we just check existence to pass it to the backend.
   // The backend will perform the actual HMAC validation.

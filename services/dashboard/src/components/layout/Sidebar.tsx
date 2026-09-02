@@ -45,7 +45,7 @@ const Sidebar = () => {
         <div className="w-8 h-8 bg-green-500 rounded flex items-center justify-center text-white font-bold text-xl">
           N
         </div>
-        <span className="text-white font-semibold text-lg">NeerCloud</span>
+        <span className="text-white font-semibold text-lg">Neer-Data-Base</span>
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4">
@@ -79,7 +79,7 @@ const Sidebar = () => {
       </nav>
 
       <div className="p-4 border-t border-[#333] text-xs">
-        NeerCloud v0.1.0
+        Neer-Data-Base v0.1.0
       </div>
     </aside>
   );

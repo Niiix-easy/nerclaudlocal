@@ -21,7 +21,7 @@ app.use((req, res, next) => {
   const cookies = req.headers.cookie;
   if (!cookies) return res.status(401).json({ error: 'Unauthorized - No cookies provided' });
 
-  const tokenCookie = cookies.split(';').find(c => c.trim().startsWith('neercloud_admin_auth='));
+  const tokenCookie = cookies.split(';').find(c => c.trim().startsWith('neer-data-base_admin_auth='));
   if (!tokenCookie) return res.status(401).json({ error: 'Unauthorized - Missing auth cookie' });
 
   const token = tokenCookie.split('=')[1];

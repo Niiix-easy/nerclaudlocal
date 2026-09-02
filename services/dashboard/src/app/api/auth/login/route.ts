@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       const token = crypto.createHmac('sha256', sessionSecret).update('authenticated').digest('hex');
 
       const cookieStore = await cookies()
-      cookieStore.set('neercloud_admin_auth', token, {
+      cookieStore.set('neer-data-base_admin_auth', token, {
         httpOnly: true,
         secure: false, // Ensure this works over local HTTP for ZimaOS
         sameSite: 'lax',

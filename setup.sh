@@ -8,7 +8,7 @@ RED='\033[0;31m'
 NC='\033[0m' # Sem cor
 
 echo -e "${BLUE}=======================================================${NC}"
-echo -e "${BLUE}       Instalador Rápido NeerCloud (ZimaOS Edition)      ${NC}"
+echo -e "${BLUE}       Instalador Rápido Neer-Data-Base (ZimaOS Edition)      ${NC}"
 echo -e "${BLUE}=======================================================${NC}"
 echo -e "Este script vai configurar automaticamente todo o seu ambiente."
 echo -e "Responda as 3 perguntas abaixo para gerar sua nuvem privada.\n"
@@ -34,7 +34,7 @@ if [[ -z "$DB_PASSWORD" ]]; then
 fi
 
 # 3. Senha do Painel Administrativo
-echo -e "\n${YELLOW}Passo 3: Crie a senha MESTRA para acessar o painel NeerCloud (Dashboard).${NC}"
+echo -e "\n${YELLOW}Passo 3: Crie a senha MESTRA para acessar o painel Neer-Data-Base (Dashboard).${NC}"
 read -s -p "Senha do Dashboard: " ADMIN_PASSWORD
 echo ""
 
@@ -54,7 +54,7 @@ cat <<EOF > .env
 POSTGRES_PASSWORD=$DB_PASSWORD
 AUTHENTICATOR_PASSWORD=$DB_PASSWORD
 AUTH_DB_PASSWORD=$DB_PASSWORD
-MINIO_ROOT_USER=neercloud
+MINIO_ROOT_USER=neer-data-base
 MINIO_ROOT_PASSWORD=$DB_PASSWORD
 
 # ── Senhas Administrativas e Segurança ───────────────────────────────
@@ -67,7 +67,7 @@ PUBLIC_DASHBOARD_URL=http://$LOCAL_IP:3000
 PUBLIC_GATEWAY_URL=http://$LOCAL_IP:8000
 PUBLIC_CONTROL_PLANE_URL=http://$LOCAL_IP:3001
 
-DATA_PATH=./neercloud-data
+DATA_PATH=./neer-data-base-data
 
 # ── Portas ───────────────────────────────────────────────────────────
 POSTGRES_PORT=5432
@@ -107,7 +107,7 @@ echo -e "\n${BLUE}=======================================================${NC}"
 echo -e "${GREEN}Instalação Concluída com Sucesso! 🎉${NC}"
 echo -e "${BLUE}=======================================================${NC}"
 echo -e "\nSeu painel privado já está rodando no ZimaOS."
-echo -e "\nPara acessar o seu Dashboard NeerCloud:"
+echo -e "\nPara acessar o seu Dashboard Neer-Data-Base:"
 echo -e "👉 ${YELLOW}http://$LOCAL_IP:3000${NC}"
 echo -e "\nUse a senha que você definiu no Passo 3 para entrar."
 echo -e "Aproveite a sua nuvem local! 🚀"

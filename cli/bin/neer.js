@@ -5,7 +5,7 @@ const { Command } = require('commander');
 const axios = require('axios');
 
 const program = new Command();
-program.version('1.0.0').description('NeerCloud CLI');
+program.version('1.0.0').description('Neer-Data-Base CLI');
 
 const CONTROL_PLANE_URL = process.env.CONTROL_PLANE_URL || 'http://localhost:3001';
 
@@ -15,8 +15,8 @@ const getHeaders = () => {
   const expectedToken = crypto.createHmac('sha256', secret).update('authenticated').digest('hex');
   return {
     headers: {
-      'Cookie': `neercloud_admin_auth=${expectedToken}`,
-      'X-NeerCloud-Internal': 'true'
+      'Cookie': `neer-data-base_admin_auth=${expectedToken}`,
+      'X-Neer-Data-Base-Internal': 'true'
     }
   };
 };

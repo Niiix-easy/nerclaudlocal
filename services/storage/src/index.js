@@ -16,7 +16,7 @@ app.use((req, res, next) => {
   const cookies = req.headers.cookie;
   if (!cookies) return res.status(401).json({ error: 'Unauthorized - No cookies provided' });
 
-  const tokenCookie = cookies.split(';').find(c => c.trim().startsWith('neercloud_admin_auth='));
+  const tokenCookie = cookies.split(';').find(c => c.trim().startsWith('neer-data-base_admin_auth='));
   if (!tokenCookie) return res.status(401).json({ error: 'Unauthorized - Missing auth cookie' });
 
   const token = tokenCookie.split('=')[1];
@@ -39,7 +39,7 @@ const minioClient = new Minio.Client({
 
 // Configure multer to store files on disk in a temporary directory
 // to avoid buffering large files entirely in RAM (memoryStorage)
-const upload = multer({ dest: '/tmp/neercloud_uploads/' });
+const upload = multer({ dest: '/tmp/neer-data-base_uploads/' });
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });

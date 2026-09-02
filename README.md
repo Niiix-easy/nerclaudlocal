@@ -1,6 +1,6 @@
-# NeerCloud — Backend Cloud (BaaS)
+# Neer-Data-Base — Backend Cloud (BaaS)
 
-NeerCloud é uma plataforma de Backend-as-a-Service própria, com PostgreSQL como
+Neer-Data-Base é uma plataforma de Backend-as-a-Service própria, com PostgreSQL como
 núcleo, seguindo a arquitetura descrita em `docs/ARCHITECTURE.md`.
 
 > **Quer login social ou integrar com Lovable/bolt.new/GitHub?** Veja
@@ -117,7 +117,7 @@ o projeto no Kong (rotas) e devolve as URLs da API.
 ## Estrutura do repositório
 
 ```
-neercloud/
+neer-data-base/
 ├── docker-compose.yml         # orquestra o stack principal
 ├── .env.example
 ├── MODULES.md                 # índice: módulo → pasta
