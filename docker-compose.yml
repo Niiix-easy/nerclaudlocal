@@ -280,7 +280,7 @@ services:
       STUDIO_ADMIN_PASSWORD: ${STUDIO_ADMIN_PASSWORD}
       STUDIO_SESSION_SECRET: ${STUDIO_SESSION_SECRET}
     ports:
-      - "${DASHBOARD_PORT:-3000}:3000"
+      - "${DASHBOARD_PORT:-3010}:3000"
     mem_limit: ${DASHBOARD_MEM_LIMIT:-256m}
     networks: [neer-data-base]
 

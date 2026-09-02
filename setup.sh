@@ -64,7 +64,7 @@ JWT_SECRET=$JWT_SECRET
 STUDIO_SESSION_SECRET='642483de8083285d0f3cf89b29b7a2615cdf68c9c8c3c92af64b570f1f604caf'
 
 # ── ZimaOS / Rede Local (IMPORTANTE) ──────────────────────────────────
-PUBLIC_DASHBOARD_URL=http://$LOCAL_IP:3000
+PUBLIC_DASHBOARD_URL=http://$LOCAL_IP:3010
 PUBLIC_GATEWAY_URL=http://$LOCAL_IP:8000
 PUBLIC_CONTROL_PLANE_URL=http://$LOCAL_IP:3001
 
@@ -76,7 +76,7 @@ POOLER_PORT=6432
 GATEWAY_PORT=8000
 KONG_ADMIN_PORT=8001
 CONTROL_PLANE_PORT=3001
-DASHBOARD_PORT=3000
+DASHBOARD_PORT=3010
 STORAGE_PORT=3002
 FUNCTIONS_PORT=8787
 GRAPHQL_PORT=5000
@@ -109,6 +109,6 @@ echo -e "${GREEN}Instalação Concluída com Sucesso! 🎉${NC}"
 echo -e "${BLUE}=======================================================${NC}"
 echo -e "\nSeu painel privado já está rodando no ZimaOS."
 echo -e "\nPara acessar o seu Dashboard Neer-Data-Base:"
-echo -e "👉 ${YELLOW}http://$LOCAL_IP:3000${NC}"
+echo -e "👉 ${YELLOW}http://$LOCAL_IP:3010${NC}"
 echo -e "\nUse a senha que você definiu no Passo 3 para entrar."
 echo -e "Aproveite a sua nuvem local! 🚀"
