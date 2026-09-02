@@ -16,7 +16,12 @@ import {
   Activity,
   List,
   Blocks,
-  Settings
+  Settings,
+  Search,
+  User,
+  Bot,
+  LifeBuoy,
+  HelpCircle
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -37,6 +42,11 @@ const Sidebar = () => {
     { name: 'Integrações', href: '/integrations', icon: Blocks },
     { name: 'Configurações do proj...', href: '/settings', icon: Settings, separator: true },
     { name: 'Webhooks', href: '/settings/webhooks', icon: Zap },
+    { name: 'Buscador do projeto', href: '/search', icon: Search, separator: true },
+    { name: 'Configurações da conta', href: '/account', icon: User },
+    { name: 'Assistente de IA', href: '/ai', icon: Bot },
+    { name: 'Central de consultores', href: '/consultants', icon: LifeBuoy },
+    { name: 'Ajuda', href: '/help', icon: HelpCircle },
   ];
 
   return (
