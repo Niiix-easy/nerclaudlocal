@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
+import { useI18n } from "@/contexts/I18nContext";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const { t, locale, setLocale } = useI18n();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,10 +34,10 @@ export default function LoginPage() {
         router.refresh();
       } else {
         const data = await res.json();
-        setError(data.error || "Authentication failed");
+        setError(data.error || t('login.title') + " falhou");
       }
     } catch (err) {
-      setError("An error occurred. Please try again.");
+      setError("Erro. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -45,17 +47,24 @@ export default function LoginPage() {
     <div className="flex min-h-screen">
       {/* Left section: Hero / Landing */}
       <div className="hidden lg:flex lg:flex-1 lg:flex-col lg:justify-center lg:px-12 bg-gradient-to-br from-indigo-900 via-gray-900 to-black text-white relative overflow-hidden">
+        <div className="absolute top-6 left-6 flex items-center gap-4 z-20">
+          <select
+            value={locale}
+            onChange={(e) => setLocale(e.target.value as any)}
+            className="bg-transparent border border-gray-600 text-white rounded px-2 py-1 text-sm focus:outline-none"
+          >
+            <option value="en-US" className="bg-gray-800 text-white">English (US)</option>
+            <option value="pt-BR" className="bg-gray-800 text-white">Português (BR)</option>
+          </select>
+        </div>
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
         <div className="relative z-10 max-w-2xl">
-           <h1 className="text-5xl font-extrabold tracking-tight mb-6">Neer-Data-Base</h1>
-           <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-             A poderosa plataforma Backend-as-a-Service, totalmente focada no seu ambiente local ZimaOS. Gerencie bancos de dados, execute funções na borda e faça upload de arquivos com total segurança e privacidade.
-           </p>
+           <h1 className="text-5xl font-extrabold tracking-tight mb-6">{t('brand')}</h1>
+           <p className="text-xl text-gray-300 mb-8 leading-relaxed">{t('landing.description')}</p>
            <ul className="space-y-4 text-gray-400">
-              <li className="flex items-center"><svg className="h-6 w-6 text-indigo-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Editor SQL Inteligente integrado</li>
-              <li className="flex items-center"><svg className="h-6 w-6 text-indigo-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Edge Functions com Deno</li>
-              <li className="flex items-center"><svg className="h-6 w-6 text-indigo-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> Gerenciamento Visual de Storage S3</li>
-              <li className="flex items-center"><svg className="h-6 w-6 text-indigo-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> 100% self-hosted e seguro</li>
+              {(t('landing.features') as unknown as string[]).map((feature: string, idx: number) => (
+                <li key={idx} className="flex items-center"><svg className="h-6 w-6 text-indigo-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg> {feature}</li>
+              ))}
            </ul>
         </div>
       </div>
@@ -65,10 +74,10 @@ export default function LoginPage() {
         <div className="w-full max-w-md space-y-8 bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-700">
           <div>
             <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-white">
-              Acesso ao Painel
+              {t('login.title')}
             </h2>
             <p className="mt-2 text-center text-sm text-gray-400">
-              Faça login com suas credenciais de administrador.
+              {t('login.subtitle')}
             </p>
           </div>
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -83,7 +92,7 @@ export default function LoginPage() {
                   type="text"
                   required
                   className="relative block w-full rounded-md border-0 bg-gray-700 py-3 px-3 text-white ring-1 ring-inset ring-gray-600 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
-                  placeholder="Nome de usuário"
+                  placeholder={t('login.username')}
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                 />
@@ -98,7 +107,7 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   required
                   className="relative block w-full rounded-md border-0 bg-gray-700 py-3 px-3 pr-10 text-white ring-1 ring-inset ring-gray-600 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-500 sm:text-sm sm:leading-6"
-                  placeholder="Senha"
+                  placeholder={t('login.password')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -122,7 +131,7 @@ export default function LoginPage() {
                   href="/login/reset-password"
                   className="font-medium text-indigo-400 hover:text-indigo-300"
                 >
-                  Resetar senha
+                  {t('login.resetPassword')}
                 </Link>
               </div>
               <div className="text-sm">
@@ -130,7 +139,7 @@ export default function LoginPage() {
                   href="/login/create-password"
                   className="font-medium text-indigo-400 hover:text-indigo-300"
                 >
-                  Fazer nova senha
+                  {t('login.createPassword')}
                 </Link>
               </div>
             </div>
@@ -145,7 +154,7 @@ export default function LoginPage() {
                 disabled={loading}
                 className="group relative flex w-full justify-center rounded-md bg-indigo-600 py-3 px-3 text-sm font-semibold text-white hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50 transition-colors"
               >
-                {loading ? "Entrando..." : "Entrar"}
+                {loading ? t('login.signingIn') : t('login.signIn')}
               </button>
             </div>
           </form>

@@ -23,30 +23,34 @@ import {
   LifeBuoy,
   HelpCircle
 } from 'lucide-react';
+import LanguageSelector from './LanguageSelector';
+import { useI18n } from '@/contexts/I18nContext';
 
 const Sidebar = () => {
   const pathname = usePathname();
+  const { t } = useI18n();
 
   const navItems = [
-    { name: 'Visão geral do projeto', href: '/', icon: Home },
-    { name: 'Editor de tabelas', href: '/editor', icon: Table },
-    { name: 'Editor SQL', href: '/sql-editor', icon: TerminalSquare },
-    { name: 'Banco de dados', href: '/database', icon: Database, separator: true },
-    { name: 'Autenticação', href: '/auth', icon: Users },
-    { name: 'Armazenar', href: '/storage', icon: Archive },
-    { name: 'Funções de Borda', href: '/functions', icon: Zap },
-    { name: 'Em tempo real', href: '/realtime', icon: Radio },
-    { name: 'Conselheiros', href: '/advisors', icon: Lightbulb, separator: true },
-    { name: 'Observabilidade', href: '/observability', icon: Activity },
-    { name: 'Registros', href: '/logs', icon: List },
-    { name: 'Integrações', href: '/integrations', icon: Blocks },
-    { name: 'Configurações do proj...', href: '/settings', icon: Settings, separator: true },
-    { name: 'Webhooks', href: '/settings/webhooks', icon: Zap },
-    { name: 'Buscador do projeto', href: '/search', icon: Search, separator: true },
-    { name: 'Configurações da conta', href: '/account', icon: User },
-    { name: 'Assistente de IA', href: '/ai', icon: Bot },
-    { name: 'Central de consultores', href: '/consultants', icon: LifeBuoy },
-    { name: 'Ajuda', href: '/help', icon: HelpCircle },
+    { name: t('sidebar.overview'), href: '/', icon: Home },
+    { name: t('sidebar.tableEditor'), href: '/editor', icon: Table },
+    { name: t('sidebar.sqlEditor'), href: '/sql-editor', icon: TerminalSquare },
+    { name: t('sidebar.database'), href: '/database', icon: Database, separator: true },
+    { name: t('sidebar.auth'), href: '/auth', icon: Users },
+    { name: t('sidebar.storage'), href: '/storage', icon: Archive },
+    { name: t('sidebar.functions'), href: '/functions', icon: Zap },
+    { name: t('sidebar.realtime'), href: '/realtime', icon: Radio },
+    { name: t('sidebar.advisors'), href: '/advisors', icon: Lightbulb, separator: true },
+    { name: t('sidebar.observability'), href: '/observability', icon: Activity },
+    { name: t('sidebar.logs'), href: '/logs', icon: List },
+    { name: t('sidebar.integrations'), href: '/integrations', icon: Blocks },
+    { name: t('sidebar.settings'), href: '/settings', icon: Settings, separator: true },
+    { name: t('sidebar.webhooks'), href: '/settings/webhooks', icon: Zap },
+    { name: t('sidebar.search'), href: '/search', icon: Search, separator: true },
+    { name: t('sidebar.account'), href: '/account', icon: User },
+    { name: t('sidebar.ai'), href: '/ai', icon: Bot },
+    { name: t('sidebar.consultants'), href: '/consultants', icon: LifeBuoy },
+    { name: t('sidebar.pricing'), href: '/pricing', icon: List },
+    { name: t('sidebar.help'), href: '/help', icon: HelpCircle },
   ];
 
   return (
@@ -88,8 +92,9 @@ const Sidebar = () => {
         </ul>
       </nav>
 
-      <div className="p-4 border-t border-[#333] text-xs">
-        Neer-Data-Base v0.1.0
+      <div className="p-4 border-t border-[#333] flex justify-between items-center text-xs">
+        <span>Neer-Data-Base v0.1.0</span>
+        <LanguageSelector />
       </div>
     </aside>
   );
