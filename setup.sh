@@ -33,15 +33,6 @@ if [[ -z "$DB_PASSWORD" ]]; then
     exit 1
 fi
 
-# 3. Senha do Painel Administrativo
-echo -e "\n${YELLOW}Passo 3: Crie a senha MESTRA para acessar o painel Neer-Data-Base (Dashboard).${NC}"
-read -s -p "Senha do Dashboard: " ADMIN_PASSWORD
-echo ""
-
-if [[ -z "$ADMIN_PASSWORD" ]]; then
-    echo -e "${RED}A senha do Dashboard não pode ficar em branco. Abortando.${NC}"
-    exit 1
-fi
 
 echo -e "\n${GREEN}Gerando chaves de segurança secretas...${NC}"
 JWT_SECRET=$(openssl rand -hex 32)
@@ -110,5 +101,5 @@ echo -e "${BLUE}=======================================================${NC}"
 echo -e "\nSeu painel privado já está rodando no ZimaOS."
 echo -e "\nPara acessar o seu Dashboard Neer-Data-Base:"
 echo -e "👉 ${YELLOW}http://$LOCAL_IP:3010${NC}"
-echo -e "\nUse a senha que você definiu no Passo 3 para entrar."
+echo -e "\nUse a senha de administrador (25150605) para entrar."
 echo -e "Aproveite a sua nuvem local! 🚀"

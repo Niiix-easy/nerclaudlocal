@@ -15,10 +15,14 @@ export function middleware(request: NextRequest) {
 
   // For API routes (like proxy endpoints), we just check existence to pass it to the backend.
   // The backend will perform the actual HMAC validation.
-  if (isApiRoute && request.nextUrl.pathname !== "/api/auth/login") {
+  if (isApiRoute) {
+     if (request.nextUrl.pathname === "/api/auth/login") {
+         return NextResponse.next()
+     }
      if (!authCookie || !authCookie.value) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
      }
+     return NextResponse.next()
   }
 
   if (isLoginPage) {

@@ -9,9 +9,11 @@ program.version('1.0.0').description('Neer-Data-Base CLI');
 
 const CONTROL_PLANE_URL = process.env.CONTROL_PLANE_URL || 'http://localhost:3001';
 
+require('dotenv').config();
+
 // CLI automatically bypasses the simple auth if we set the local internal header
 const getHeaders = () => {
-  const secret = process.env.STUDIO_SESSION_SECRET || '642483de80302b1f3c398e4d3db2cd4d6731e05084bdba82f3efb27d427bf2e2';
+  const secret = process.env.STUDIO_SESSION_SECRET || '642483de8083285d0f3cf89b29b7a2615cdf68c9c8c3c92af64b570f1f604caf';
   const expectedToken = crypto.createHmac('sha256', secret).update('authenticated').digest('hex');
   return {
     headers: {
