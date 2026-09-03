@@ -23,7 +23,14 @@ const handler = async (req: Request): Promise<Response> => {
   // Very simplistic security check matching the rest of the application
   const token = extractAuthToken(req);
 
-  const secret = Deno.env.get("STUDIO_SESSION_SECRET") || "";
+  const secret = Deno.env.get("STUDIO_SESSION_SECRET");
+  if (!secret) {
+     return new Response(JSON.stringify({ error: "Server Configuration Error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const expectedToken = createHmac("sha256", secret)
     .update("authenticated")
     .digest("hex");

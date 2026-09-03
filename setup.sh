@@ -49,8 +49,8 @@ MINIO_ROOT_USER=neer-data-base
 MINIO_ROOT_PASSWORD=$DB_PASSWORD
 
 # ── Senhas Administrativas e Segurança ───────────────────────────────
-STUDIO_ADMIN_EMAIL=neersoftwarebr@gmail.com
-STUDIO_ADMIN_PASSWORD=25150605
+STUDIO_ADMIN_EMAIL='neersoftwarebr@gmail.com'
+STUDIO_ADMIN_PASSWORD='25150605'
 JWT_SECRET=$JWT_SECRET
 STUDIO_SESSION_SECRET='642483de8083285d0f3cf89b29b7a2615cdf68c9c8c3c92af64b570f1f604caf'
 

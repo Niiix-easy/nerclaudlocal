@@ -15,6 +15,8 @@ model User {
   timezone  String   @default("UTC")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  Organizations OrganizationMember[]
 }
 
 model Organization {
@@ -26,6 +28,47 @@ model Organization {
   defaultCurrency String   @default("USD")
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  Members OrganizationMember[]
+}
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  role           String       @default("VIEWER") // OWNER, ADMIN, BILLING, DEVELOPER, VIEWER
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  Organization   Organization @relation(fields: [organizationId], references: [id])
+  User           User         @relation(fields: [userId], references: [id])
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+model Project {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  slug           String       @unique
+  region         String       @default("us-east-1")
+  status         String       @default("ACTIVE")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+}
+
+model Subscription {
+  id             String       @id @default(cuid())
+  organizationId String
+  planVersionId  String
+  status         String       @default("TRIALING") // TRIALING, ACTIVE, PAST_DUE, UNPAID, CANCELED, PAUSED
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
 }
 
 model ApiKey {
@@ -133,6 +176,42 @@ model InvoiceSequence {
   @@unique([organizationId, year])
 }
 
+model Invoice {
+  id             String       @id @default(cuid())
+  organizationId String
+  billingCycleId String
+  currency       String       @default("USD")
+  subtotal       BigInt       @default(0)
+  discount       BigInt       @default(0)
+  tax            BigInt       @default(0)
+  total          BigInt       @default(0)
+  status         String       @default("DRAFT") // DRAFT, OPEN, PAID, UNCOLLECTIBLE, VOID
+  // IMMUTABLE ONCE ISSUED
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([billingCycleId])
+}
+
+model Payment {
+  id             String       @id @default(cuid())
+  organizationId String
+  invoiceId      String
+  paymentMethodId String?
+  idempotencyKey String       @unique // Idempotency guarantee
+  amount         BigInt
+  currency       String       @default("USD")
+  status         String       @default("PENDING") // PENDING, PROCESSING, SUCCEEDED, FAILED, REFUNDED
+  providerRef    String?
+  // IMMUTABLE
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([invoiceId])
+}
+
 enum PaymentMethodType {
   CARD
   BANK_TRANSFER
@@ -182,6 +261,33 @@ model CouponRedemption {
   redeemedAt     DateTime @default(now())
 
   @@unique([couponId, organizationId])
+  @@index([organizationId])
+}
+
+model WebhookEvent {
+  id             String       @id @default(cuid())
+  organizationId String
+  idempotencyKey String       @unique // Identidade protegida / Idempotência
+  provider       String
+  type           String
+  payload        Json
+  status         String       @default("PENDING") // PENDING, PROCESSED, FAILED
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId])
+}
+
+model AuditLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String?
+  action         String
+  resource       String
+  oldValue       Json?
+  newValue       Json?
+  // Append-only
+  createdAt      DateTime     @default(now())
+
   @@index([organizationId])
 }
 

@@ -1,0 +1,10 @@
+{
+  "name": "@neer/worker",
+  "version": "1.0.0",
+  "description": "BullMQ Worker for Neer-Data-Base Billing",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "echo 'Mock build'",
+    "start": "echo 'Mock start'"
+  }
+}

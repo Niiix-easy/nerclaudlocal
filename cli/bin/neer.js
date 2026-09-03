@@ -13,7 +13,12 @@ require('dotenv').config();
 
 // CLI automatically bypasses the simple auth if we set the local internal header
 const getHeaders = () => {
-  const secret = process.env.STUDIO_SESSION_SECRET || '642483de8083285d0f3cf89b29b7a2615cdf68c9c8c3c92af64b570f1f604caf';
+  const secret = process.env.STUDIO_SESSION_SECRET;
+  if (!secret) {
+    console.error('Error: STUDIO_SESSION_SECRET is not set in the environment or .env file.');
+    process.exit(1);
+  }
+
   const expectedToken = crypto.createHmac('sha256', secret).update('authenticated').digest('hex');
   return {
     headers: {

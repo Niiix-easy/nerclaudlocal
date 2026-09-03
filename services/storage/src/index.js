@@ -21,7 +21,12 @@ app.use((req, res, next) => {
 
   const token = tokenCookie.split('=')[1];
 
-  const expectedToken = crypto.createHmac('sha256', process.env.STUDIO_SESSION_SECRET || '').update('authenticated').digest('hex');
+  if (!process.env.STUDIO_SESSION_SECRET) {
+    console.error('CRITICAL: STUDIO_SESSION_SECRET is missing!');
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+
+  const expectedToken = crypto.createHmac('sha256', process.env.STUDIO_SESSION_SECRET).update('authenticated').digest('hex');
   if (token !== expectedToken) {
     return res.status(401).json({ error: 'Invalid token' });
   }

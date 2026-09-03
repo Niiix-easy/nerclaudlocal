@@ -5,12 +5,17 @@ import crypto from 'crypto';
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json()
-    const adminEmail = process.env.STUDIO_ADMIN_EMAIL || 'neersoftwarebr@gmail.com'
-    const adminPassword = process.env.STUDIO_ADMIN_PASSWORD || '25150605'
+    const adminEmail = process.env.STUDIO_ADMIN_EMAIL
+    const adminPassword = process.env.STUDIO_ADMIN_PASSWORD
     const sessionSecret = process.env.STUDIO_SESSION_SECRET
 
     if (!sessionSecret) {
       console.error('STUDIO_SESSION_SECRET is not set in environment variables')
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    }
+
+    if (!adminEmail || !adminPassword) {
+      console.error('STUDIO_ADMIN_EMAIL or STUDIO_ADMIN_PASSWORD is not set in environment variables')
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
     }
 
