@@ -26,3 +26,17 @@ types/database.ts
 *.log
 .DS_Store
 Thumbs.db
+node_modules/
+.next/
+dist/
+node_modules/
+.next/
+dist/
+*.pack
+*.sst
+node_modules/
+.next/
+dist/
+*.rej
+*.orig
+*.patch
