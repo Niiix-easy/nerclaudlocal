@@ -5,6 +5,6 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "echo 'Mock build'",
-    "start": "echo 'Mock start'"
+    "start": "node dist/index.js"
   }
 }

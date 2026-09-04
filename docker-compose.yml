@@ -169,23 +169,37 @@ services:
     networks: [neer-data-base]
 
   api:
-    build: ./apps/api
+    build:
+      context: .
+      dockerfile: ./apps/api/Dockerfile
     container_name: neer-data-base-api
     profiles: ["core"]
     depends_on:
       postgres:
         condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/neer-data-base
+    command: >
+      sh -c "cd /app/packages/database && npx prisma db push --accept-data-loss && npm run seed && cd ../../apps/api && npm start"
     ports:
       - "3005:3000"
     networks: [neer-data-base]
 
   worker:
-    build: ./apps/worker
+    build:
+      context: .
+      dockerfile: ./apps/worker/Dockerfile
     container_name: neer-data-base-worker
     profiles: ["core"]
     depends_on:
       postgres:
         condition: service_healthy
+      api:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/neer-data-base
+    command: >
+      sh -c "cd /app/apps/worker && npm start"
     networks: [neer-data-base]
 
   # ── GraphQL automático — opcional, perfil "graphql" (serviço pesado) ─

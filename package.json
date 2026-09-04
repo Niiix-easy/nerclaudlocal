@@ -1,0 +1,11 @@
+{
+  "name": "neer-data-base-monorepo",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build"
+  },
+  "devDependencies": {
+    "turbo": "latest"
+  }
+}

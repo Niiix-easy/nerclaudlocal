@@ -1,9 +1,26 @@
 import { PrismaClient } from '@prisma/client';
+import fs from 'fs';
+import path from 'path';
 
 const prisma = new PrismaClient();
 
+async function executeRawSqlFile(filePath: string) {
+  try {
+    const sql = fs.readFileSync(filePath, 'utf8');
+    // Prisma executeRawUnsafe allows multi-statement SQL strings with DO blocks
+    console.log(`Executing raw SQL from ${filePath}...`);
+    await prisma.$executeRawUnsafe(sql);
+  } catch (error) {
+    console.error(`Error executing ${filePath}:`, error);
+  }
+}
+
 async function main() {
   console.log('Seeding Neer-Data-Base Database...');
+
+  // Apply Advanced Security RLS and Triggers NOW THAT TABLES EXIST
+  await executeRawSqlFile(path.join(__dirname, '../sql/02-rls-setup.sql'));
+  await executeRawSqlFile(path.join(__dirname, '../sql/03-advanced-security.sql'));
 
   // 0. Create Admin User
   await prisma.user.upsert({

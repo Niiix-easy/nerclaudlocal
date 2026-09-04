@@ -30,6 +30,18 @@ model Organization {
   updatedAt       DateTime @updatedAt
 
   Members OrganizationMember[]
+  Projects Project[]
+  Subscriptions Subscription[]
+  ApiKeys ApiKey[]
+  Resources Resource[]
+  UsageAggregates UsageAggregate[]
+  BillingCycles BillingCycle[]
+  Invoices Invoice[]
+  Payments Payment[]
+  PaymentMethods PaymentMethod[]
+  CouponRedemptions CouponRedemption[]
+  WebhookEvents WebhookEvent[]
+  AuditLogs AuditLog[]
 }
 
 model OrganizationMember {
@@ -40,8 +52,8 @@ model OrganizationMember {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  Organization   Organization @relation(fields: [organizationId], references: [id])
-  User           User         @relation(fields: [userId], references: [id])
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  User           User         @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   @@unique([organizationId, userId])
   @@index([userId])
@@ -57,6 +69,8 @@ model Project {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
   @@index([organizationId])
 }
 
@@ -67,6 +81,8 @@ model Subscription {
   status         String       @default("TRIALING") // TRIALING, ACTIVE, PAST_DUE, UNPAID, CANCELED, PAUSED
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   @@index([organizationId])
 }
@@ -83,6 +99,8 @@ model ApiKey {
   revokedAt      DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   @@index([organizationId])
   @@index([projectId])
@@ -117,6 +135,8 @@ model Resource {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
   @@index([organizationId])
   @@index([projectId])
   @@index([type])
@@ -133,6 +153,8 @@ model UsageAggregate {
   quantity       BigInt   @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   @@unique([organizationId, projectId, meterId, periodStart, periodEnd])
   @@index([organizationId, periodStart, periodEnd])
@@ -162,6 +184,8 @@ model BillingCycle {
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
   @@unique([subscriptionId, periodStart, periodEnd])
   @@index([organizationId])
   @@index([status])
@@ -190,6 +214,8 @@ model Invoice {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
   @@index([organizationId])
   @@index([billingCycleId])
 }
@@ -207,6 +233,8 @@ model Payment {
   // IMMUTABLE
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   @@index([organizationId])
   @@index([invoiceId])
@@ -230,6 +258,8 @@ model PaymentMethod {
   isDefault      Boolean           @default(false)
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
+
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   @@index([organizationId])
 }
@@ -260,6 +290,8 @@ model CouponRedemption {
   invoiceId      String?
   redeemedAt     DateTime @default(now())
 
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
   @@unique([couponId, organizationId])
   @@index([organizationId])
 }
@@ -274,6 +306,8 @@ model WebhookEvent {
   status         String       @default("PENDING") // PENDING, PROCESSED, FAILED
   createdAt      DateTime     @default(now())
 
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
   @@index([organizationId])
 }
 
@@ -287,6 +321,8 @@ model AuditLog {
   newValue       Json?
   // Append-only
   createdAt      DateTime     @default(now())
+
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   @@index([organizationId])
 }
@@ -314,7 +350,7 @@ model Meter {
   aggregation String   @default("SUM")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  Product     Product  @relation(fields: [productId], references: [id])
+  Product     Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
 }
 
 model Plan {
@@ -335,7 +371,7 @@ model PlanVersion {
   effectiveAt  DateTime      @default(now())
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  Plan         Plan          @relation(fields: [planId], references: [id])
+  Plan         Plan          @relation(fields: [planId], references: [id], onDelete: Restrict)
   Prices       Price[]
   Entitlements Entitlement[]
 }
@@ -349,7 +385,7 @@ model Price {
   billingInterval String      @default("MONTH")
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
-  PlanVersion     PlanVersion @relation(fields: [planVersionId], references: [id])
+  PlanVersion     PlanVersion @relation(fields: [planVersionId], references: [id], onDelete: Restrict)
 }
 
 model Entitlement {
@@ -359,5 +395,5 @@ model Entitlement {
   limit         BigInt      // The included amount
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
-  PlanVersion   PlanVersion @relation(fields: [planVersionId], references: [id])
+  PlanVersion   PlanVersion @relation(fields: [planVersionId], references: [id], onDelete: Restrict)
 }
