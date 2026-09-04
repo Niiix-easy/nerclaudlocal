@@ -40,3 +40,17 @@ dist/
 *.rej
 *.orig
 *.patch
+api_files.txt
+api_files_output.txt
+worker_files.txt
+apps_ls.txt
+services_ls.txt
+stdout
+setup_out.txt
+env_out.txt
+seed_out.txt
+packages_seed.txt
+seed_out.txt
+packages_seed.txt
+fix_git.sh
+*.txt
