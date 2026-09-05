@@ -1,103 +1,118 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
+import fs from 'fs';
+import path from 'path';
 
 const prisma = new PrismaClient();
 
-const plans = [
-  { slug: "free", name: "Free", price: 0 },
-  { slug: "developer", name: "Developer", price: 1900 },
-  { slug: "starter", name: "Starter", price: 4900 },
-  { slug: "pro", name: "Pro", price: 9900 },
-  { slug: "business", name: "Business", price: 24900 },
-  { slug: "scale", name: "Scale", price: 79900 },
-  { slug: "enterprise", name: "Enterprise", price: 0 }
-];
-
-const meters = [
-  ["database.storage", "Database Storage", "GB", "MAX"],
-  ["database.compute", "Database Compute", "HOUR", "SUM"],
-  ["storage.capacity", "Storage", "GB", "MAX"],
-  ["storage.bandwidth", "Bandwidth", "GB", "SUM"],
-  ["functions.invocations", "Function Invocations", "INVOCATION", "SUM"],
-  ["functions.compute", "Function Compute", "SECOND", "SUM"],
-  ["redis.gb_hours", "Redis", "GB_HOUR", "SUM"],
-  ["realtime.messages", "Realtime Messages", "MESSAGE", "SUM"],
-  ["realtime.connection_hours", "Realtime Connections", "HOUR", "SUM"],
-  ["compute.cpu_hours", "CPU", "CPU_HOUR", "SUM"],
-  ["compute.memory_gb_hours", "Memory", "GB_HOUR", "SUM"],
-  ["ai.input_tokens", "AI Input Tokens", "TOKEN", "SUM"],
-  ["ai.output_tokens", "AI Output Tokens", "TOKEN", "SUM"]
-] as const;
+async function executeRawSqlFile(filePath: string) {
+  try {
+    const sql = fs.readFileSync(filePath, 'utf8');
+    // Prisma executeRawUnsafe allows multi-statement SQL strings with DO blocks
+    console.log(`Executing raw SQL from ${filePath}...`);
+    await prisma.$executeRawUnsafe(sql);
+  } catch (error) {
+    console.error(`Error executing ${filePath}:`, error);
+  }
+}
 
 async function main() {
-  for (const [slug, name] of meters) {
-    const product = await prisma.product.upsert({
-      where: { slug },
-      update: {},
-      create: { slug, name, active: true }
-    });
+  console.log('Seeding Neer-Data-Base Database...');
+
+  // Apply Advanced Security RLS and Triggers NOW THAT TABLES EXIST
+  await executeRawSqlFile(path.join(__dirname, '../sql/02-rls-setup.sql'));
+  await executeRawSqlFile(path.join(__dirname, '../sql/03-advanced-security.sql'));
+
+  // 0. Create Admin User
+  await prisma.user.upsert({
+    where: { email: 'neersoftwarebr@gmail.com' },
+    update: {},
+    create: {
+      email: 'neersoftwarebr@gmail.com',
+      name: 'Neer Admin',
+    },
+  });
+
+  // 1. Create Products
+  const productsData = [
+    { slug: 'database', name: 'Database' },
+    { slug: 'storage', name: 'Storage' },
+    { slug: 'bandwidth', name: 'Bandwidth' },
+    { slug: 'functions', name: 'Functions' },
+    { slug: 'redis', name: 'Redis' },
+    { slug: 'realtime', name: 'Realtime' },
+    { slug: 'compute', name: 'Compute' },
+    { slug: 'ai', name: 'AI' }
+  ];
+
+  const products = [];
+  for (const p of productsData) {
+    products.push(
+      await prisma.product.upsert({
+        where: { slug: p.slug },
+        update: {},
+        create: p,
+      })
+    );
+  }
+
+  // 2. Create Meters
+  const metersData = [
+    { productId: products.find(p => p.slug === 'database')!.id, slug: 'database.storage', name: 'Database Storage', unit: 'GB', aggregation: 'MAX' },
+    { productId: products.find(p => p.slug === 'database')!.id, slug: 'database.compute', name: 'Database Compute', unit: 'HOURS', aggregation: 'SUM' },
+    { productId: products.find(p => p.slug === 'storage')!.id, slug: 'storage.capacity', name: 'Storage Capacity', unit: 'GB', aggregation: 'MAX' },
+    { productId: products.find(p => p.slug === 'bandwidth')!.id, slug: 'bandwidth', name: 'Bandwidth', unit: 'GB', aggregation: 'SUM' },
+    { productId: products.find(p => p.slug === 'functions')!.id, slug: 'functions.invocations', name: 'Function Invocations', unit: 'COUNT', aggregation: 'SUM' }
+  ];
+
+  for (const m of metersData) {
     await prisma.meter.upsert({
-      where: { slug },
+      where: { slug: m.slug },
       update: {},
-      create: {
-        productId: product.id,
-        slug,
-        name,
-        unit: "unit",
-        aggregation: "SUM"
-      }
+      create: m,
     });
   }
 
-  for (const p of plans) {
+  // 3. Create Plans
+  const plansData = [
+    { slug: 'free', name: 'Free', price: 0 },
+    { slug: 'developer', name: 'Developer', price: 900 },
+    { slug: 'starter', name: 'Starter', price: 2900 },
+    { slug: 'pro', name: 'Pro', price: 7900 },
+    { slug: 'business', name: 'Business', price: 19900 },
+    { slug: 'scale', name: 'Scale', price: 59900 }
+  ];
+
+  for (const p of plansData) {
     const plan = await prisma.plan.upsert({
       where: { slug: p.slug },
-      update: { name: p.name },
-      create: { slug: p.slug, name: p.name }
-    });
-
-    const version = await prisma.planVersion.upsert({
-      where: { planId_version: { planId: plan.id, version: 1 } },
       update: {},
-      create: { planId: plan.id, version: 1, effectiveAt: new Date() }
+      create: { slug: p.slug, name: p.name },
     });
 
+    // Create initial PlanVersion
+    const version = await prisma.planVersion.create({
+      data: { planId: plan.id, version: 1 }
+    });
+
+    // Create Base Price
     await prisma.price.create({
       data: {
         planVersionId: version.id,
-        currency: "USD",
-        type: "flat",
-        amount: BigInt(p.price),
-        interval: "month"
+        unitAmount: p.price,
+        currency: 'USD',
+        billingInterval: 'MONTH'
       }
-    }).catch(() => {});
-
-    const limits: Record<string, string> = {
-      projects:
-        p.slug === "free" ? "5" :
-        p.slug === "developer" ? "10" :
-        p.slug === "starter" ? "25" :
-        p.slug === "pro" ? "100" :
-        "unlimited"
-    };
-
-    for (const [key, value] of Object.entries(limits)) {
-      await prisma.planEntitlement.create({
-        data: {
-          planId: plan.id,
-          planVersionId: version.id,
-          key,
-          value
-        }
-      }).catch(() => {});
-    }
+    });
   }
 
-  console.log("Neer-Data-Base seed completed.");
+  console.log('Seeding completed successfully.');
 }
 
 main()
-  .catch((error) => {
-    console.error(error);
+  .catch((e) => {
+    console.error(e);
     process.exit(1);
   })
-  .finally(() => prisma.$disconnect());
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

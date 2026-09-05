@@ -1,55 +1,52 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { prisma } from "@neer/database";
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 @Injectable()
 export class PaymentsService {
-  async create(organizationId: string, invoiceId: string, provider: string, providerId: string) {
-    const invoice = await prisma.invoice.findFirst({ where: { id: invoiceId, organizationId } });
-    if (!invoice) throw new NotFoundException("Invoice not found");
-    if (invoice.status === "PAID") throw new BadRequestException("Invoice already paid");
-
-    return prisma.$transaction(async tx => {
-      const payment = await tx.payment.create({
-        data: {
-          organizationId,
-          invoiceId,
-          provider,
-          providerId,
-          amount: invoice.total,
-          currency: invoice.currency,
-          status: "SUCCEEDED"
-        }
+  async processPayment(data: {
+      organizationId: string;
+      invoiceId: string;
+      amount: number;
+      method: string;
+  }) {
+      // 1. Validate Invoice
+      const invoice = await prisma.invoice.findUnique({
+          where: { id: data.invoiceId }
       });
 
-      await tx.invoice.update({
-        where: { id: invoice.id },
-        data: { status: "PAID", paidAt: new Date() }
-      });
+      if (!invoice) throw new BadRequestException('Invoice not found');
+      if (invoice.status === 'PAID') throw new BadRequestException('Invoice already paid');
 
-      await tx.ledgerEntry.createMany({
-        data: [
-          {
-            organizationId,
-            account: "accounts_receivable",
-            direction: "CREDIT",
-            amount: invoice.total,
-            currency: invoice.currency,
-            referenceType: "payment",
-            referenceId: payment.id
-          },
-          {
-            organizationId,
-            account: "cash",
-            direction: "DEBIT",
-            amount: invoice.total,
-            currency: invoice.currency,
-            referenceType: "payment",
-            referenceId: payment.id
+      // 2. Mock Payment processing
+      const payment = await prisma.payment.create({
+          data: {
+              organizationId: data.organizationId,
+              invoiceId: invoice.id,
+              amount: BigInt(data.amount),
+              currency: invoice.currency,
+              status: 'SUCCEEDED',
+              provider: 'mock_provider',
+              providerId: 'mock_tx_id'
           }
-        ]
       });
 
-      return payment;
-    });
+      // 3. Mark Invoice as paid
+      await prisma.invoice.update({
+          where: { id: invoice.id },
+          data: { status: 'PAID' }
+      });
+
+      // 4. Update Billing Cycle if applicable
+      await prisma.billingCycle.updateMany({
+          where: { id: invoice.billingCycleId },
+          data: { status: 'CLOSED', closedAt: new Date() }
+      });
+
+      return {
+          ...payment,
+          amount: payment.amount.toString()
+      };
   }
 }

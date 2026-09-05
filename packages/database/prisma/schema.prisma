@@ -7,275 +7,120 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum SubscriptionStatus {
-  TRIALING
-  ACTIVE
-  PAUSED
-  PAST_DUE
-  UNPAID
-  CANCELED
-}
-
-enum BillingCycleStatus {
-  OPEN
-  RATING
-  RATED
-  INVOICING
-  INVOICED
-  CLOSED
-  FAILED
-}
-
-enum InvoiceStatus {
-  DRAFT
-  OPEN
-  PAID
-  VOID
-  UNCOLLECTIBLE
-}
-
-enum PaymentStatus {
-  PENDING
-  PROCESSING
-  SUCCEEDED
-  FAILED
-  CANCELED
-  REFUNDED
-}
-
-enum PaymentMethodType {
-  CARD
-  BANK
-  WALLET
-  OTHER
-}
-
-enum CouponType {
-  FIXED
-  PERCENTAGE
-}
-
-enum ResourceStatus {
-  ACTIVE
-  PAUSED
-  DELETED
-}
-
 model User {
-  id          String   @id @default(cuid())
-  email       String   @unique
-  name        String?
-  locale      String   @default("en-US")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  memberships Membership[]
-  apiKeys     ApiKey[]
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  locale    String   @default("en-US")
+  timezone  String   @default("UTC")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Organizations OrganizationMember[]
 }
 
 model Organization {
-  id              String             @id @default(cuid())
+  id              String   @id @default(cuid())
   name            String
-  slug            String             @unique
-  defaultLocale   String             @default("en-US")
-  currency        String             @default("USD")
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  memberships     Membership[]
-  projects        Project[]
-  subscriptions   Subscription[]
-  usageEvents     UsageEvent[]
-  usageAggregates UsageAggregate[]
-  cycles          BillingCycle[]
-  invoices        Invoice[]
-  payments        Payment[]
-  paymentMethods  PaymentMethod[]
-  apiKeys         ApiKey[]
-  resources       Resource[]
-  ledgerEntries   LedgerEntry[]
-  auditLogs       AuditLog[]
-  coupons         CouponRedemption[]
+  slug            String   @unique
+  defaultLocale   String   @default("en-US")
+  defaultTimezone String   @default("UTC")
+  defaultCurrency String   @default("USD")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  Members OrganizationMember[]
 }
 
-model Membership {
+model OrganizationMember {
   id             String       @id @default(cuid())
-  userId         String
   organizationId String
-  role           String
+  userId         String
+  role           String       @default("VIEWER") // OWNER, ADMIN, BILLING, DEVELOPER, VIEWER
   createdAt      DateTime     @default(now())
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  @@unique([userId, organizationId])
-  @@index([organizationId])
+  updatedAt      DateTime     @updatedAt
+
+  Organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  User           User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
 }
 
 model Project {
   id             String       @id @default(cuid())
   organizationId String
   name           String
-  slug           String
-  status         String       @default("active")
+  slug           String       @unique
+  region         String       @default("us-east-1")
+  status         String       @default("ACTIVE")
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  resources      Resource[]
-  apiKeys        ApiKey[]
-  usageEvents    UsageEvent[]
-  @@unique([organizationId, slug])
+
   @@index([organizationId])
-}
-
-model Product {
-  id          String      @id @default(cuid())
-  slug        String      @unique
-  name        String
-  active      Boolean     @default(true)
-  createdAt   DateTime    @default(now())
-  meters      Meter[]
-  planItems   PlanEntitlement[]
-  prices      Price[]
-}
-
-model Meter {
-  id             String            @id @default(cuid())
-  productId      String
-  slug           String            @unique
-  name           String
-  unit           String
-  aggregation    String
-  active         Boolean           @default(true)
-  product        Product           @relation(fields: [productId], references: [id])
-  usageEvents    UsageEvent[]
-  aggregates     UsageAggregate[]
-  priceItems     PriceMeter[]
-}
-
-model Plan {
-  id             String            @id @default(cuid())
-  slug           String            @unique
-  name           String
-  description    String?
-  active         Boolean           @default(true)
-  createdAt      DateTime          @default(now())
-  versions       PlanVersion[]
-  subscriptions  Subscription[]
-  entitlements   PlanEntitlement[]
-}
-
-model PlanVersion {
-  id             String       @id @default(cuid())
-  planId         String
-  version        Int
-  effectiveAt    DateTime
-  retiredAt      DateTime?
-  plan           Plan         @relation(fields: [planId], references: [id], onDelete: Cascade)
-  prices         Price[]
-  entitlements   PlanEntitlement[]
-  @@unique([planId, version])
-}
-
-model Price {
-  id             String        @id @default(cuid())
-  productId      String?
-  planVersionId  String?
-  currency       String        @default("USD")
-  type           String        @default("flat")
-  amount         BigInt        @default(0)
-  interval       String?
-  active         Boolean       @default(true)
-  product        Product?      @relation(fields: [productId], references: [id])
-  planVersion    PlanVersion?  @relation(fields: [planVersionId], references: [id])
-  meters         PriceMeter[]
-  @@index([productId])
-  @@index([planVersionId])
-}
-
-model PriceMeter {
-  id        String @id @default(cuid())
-  priceId   String
-  meterId   String
-  unitPrice BigInt
-  included  BigInt @default(0)
-  price     Price @relation(fields: [priceId], references: [id], onDelete: Cascade)
-  meter     Meter @relation(fields: [meterId], references: [id])
-  @@unique([priceId, meterId])
-}
-
-model PlanEntitlement {
-  id            String       @id @default(cuid())
-  planId        String
-  planVersionId String?
-  productId     String?
-  key           String
-  value         String
-  plan          Plan         @relation(fields: [planId], references: [id], onDelete: Cascade)
-  planVersion   PlanVersion? @relation(fields: [planVersionId], references: [id])
-  product       Product?     @relation(fields: [productId], references: [id])
-  @@index([planId, key])
 }
 
 model Subscription {
-  id             String             @id @default(cuid())
-  organizationId String
-  planId         String
-  status         SubscriptionStatus @default(ACTIVE)
-  currency       String             @default("USD")
-  startedAt      DateTime           @default(now())
-  currentPeriodStart DateTime
-  currentPeriodEnd   DateTime
-  canceledAt     DateTime?
-  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  plan           Plan               @relation(fields: [planId], references: [id])
-  cycles         BillingCycle[]
-  invoices       Invoice[]
-  @@index([organizationId])
-  @@index([status])
-}
-
-model BillingCycle {
-  id             String             @id @default(cuid())
-  organizationId String
-  subscriptionId String
-  periodStart    DateTime
-  periodEnd      DateTime
-  status         BillingCycleStatus @default(OPEN)
-  ratedAt        DateTime?
-  invoicedAt     DateTime?
-  closedAt       DateTime?
-  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  subscription   Subscription       @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
-  invoice        Invoice?
-  @@unique([subscriptionId, periodStart, periodEnd])
-  @@index([organizationId, status])
-}
-
-model UsageEvent {
   id             String       @id @default(cuid())
-  eventId        String       @unique
   organizationId String
-  projectId      String?
-  meterId        String
-  quantity       BigInt
-  occurredAt     DateTime
-  source         String
-  metadata       Json?
+  planVersionId  String
+  status         String       @default("TRIALING") // TRIALING, ACTIVE, PAST_DUE, UNPAID, CANCELED, PAUSED
   createdAt      DateTime     @default(now())
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project        Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  meter          Meter        @relation(fields: [meterId], references: [id])
-  @@index([organizationId, occurredAt])
-  @@index([meterId, occurredAt])
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
 }
 
-model UsageAdjustment {
+model ApiKey {
   id             String   @id @default(cuid())
   organizationId String
-  usageEventId   String
-  quantity       BigInt
-  reason         String
-  createdBy      String?
+  projectId      String
+  name           String
+  prefix         String
+  keyHash        String
+  lastUsedAt     DateTime?
+  expiresAt      DateTime?
+  revokedAt      DateTime?
   createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
   @@index([organizationId])
-  @@index([usageEventId])
+  @@index([projectId])
+  @@index([prefix])
+}
+
+model ApiKeyScope {
+  id        String @id @default(cuid())
+  apiKeyId  String
+  scope     String
+
+  @@unique([apiKeyId, scope])
+  @@index([apiKeyId])
+}
+
+enum ResourceStatus {
+  ACTIVE
+  PAUSED
+  SUSPENDED
+  DELETED
+}
+
+model Resource {
+  id             String         @id @default(cuid())
+  organizationId String
+  projectId      String
+  type           String
+  provider       String
+  externalId     String?
+  status         ResourceStatus @default(ACTIVE)
+  metadata       Json?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([organizationId])
+  @@index([projectId])
+  @@index([type])
+  @@index([externalId])
 }
 
 model UsageAggregate {
@@ -288,47 +133,88 @@ model UsageAggregate {
   quantity       BigInt   @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  meter          Meter @relation(fields: [meterId], references: [id])
+
   @@unique([organizationId, projectId, meterId, periodStart, periodEnd])
   @@index([organizationId, periodStart, periodEnd])
+  @@index([meterId, periodStart, periodEnd])
+}
+
+enum BillingCycleStatus {
+  OPEN
+  RATING
+  RATED
+  INVOICING
+  INVOICED
+  CLOSED
+  FAILED
+}
+
+model BillingCycle {
+  id             String             @id @default(cuid())
+  organizationId String
+  subscriptionId String
+  periodStart    DateTime
+  periodEnd      DateTime
+  status         BillingCycleStatus @default(OPEN)
+  ratedAt        DateTime?
+  invoicedAt     DateTime?
+  closedAt       DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([subscriptionId, periodStart, periodEnd])
+  @@index([organizationId])
+  @@index([status])
+}
+
+model InvoiceSequence {
+  id             String @id @default(cuid())
+  organizationId String
+  year           Int
+  value          Int    @default(0)
+
+  @@unique([organizationId, year])
 }
 
 model Invoice {
-  id             String        @id @default(cuid())
+  id             String       @id @default(cuid())
   organizationId String
-  subscriptionId String
-  billingCycleId String        @unique
-  number         String        @unique
-  currency       String        @default("USD")
-  subtotal       BigInt        @default(0)
-  discount       BigInt        @default(0)
-  tax            BigInt        @default(0)
-  total          BigInt        @default(0)
-  status         InvoiceStatus @default(DRAFT)
-  dueAt          DateTime?
-  paidAt         DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  subscription   Subscription  @relation(fields: [subscriptionId], references: [id])
-  cycle          BillingCycle  @relation(fields: [billingCycleId], references: [id])
-  lines          InvoiceLine[]
-  payments       Payment[]
-  @@index([organizationId, createdAt])
+  billingCycleId String
+  currency       String       @default("USD")
+  subtotal       BigInt       @default(0)
+  discount       BigInt       @default(0)
+  tax            BigInt       @default(0)
+  total          BigInt       @default(0)
+  status         String       @default("DRAFT") // DRAFT, OPEN, PAID, UNCOLLECTIBLE, VOID
+  // IMMUTABLE ONCE ISSUED
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+  @@index([billingCycleId])
 }
 
-model InvoiceLine {
-  id          String  @id @default(cuid())
-  invoiceId   String
-  description String
-  meterId     String?
-  quantity    BigInt
-  unitAmount  BigInt
-  amount      BigInt
-  metadata    Json?
-  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+model Payment {
+  id             String       @id @default(cuid())
+  organizationId String
+  invoiceId      String
+  paymentMethodId String?
+  idempotencyKey String       @unique // Idempotency guarantee
+  amount         BigInt
+  currency       String       @default("USD")
+  status         String       @default("PENDING") // PENDING, PROCESSING, SUCCEEDED, FAILED, REFUNDED
+  providerRef    String?
+  // IMMUTABLE
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
   @@index([invoiceId])
+}
+
+enum PaymentMethodType {
+  CARD
+  BANK_TRANSFER
 }
 
 model PaymentMethod {
@@ -344,89 +230,13 @@ model PaymentMethod {
   isDefault      Boolean           @default(false)
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
-  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
   @@index([organizationId])
 }
 
-model Payment {
-  id             String        @id @default(cuid())
-  organizationId String
-  invoiceId      String
-  provider       String
-  providerId     String
-  amount         BigInt
-  currency       String        @default("USD")
-  status         PaymentStatus @default(PENDING)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  invoice        Invoice       @relation(fields: [invoiceId], references: [id])
-  @@unique([provider, providerId])
-  @@index([organizationId, status])
-}
-
-model LedgerEntry {
-  id             String   @id @default(cuid())
-  organizationId String
-  account        String
-  direction      String
-  amount         BigInt
-  currency       String   @default("USD")
-  referenceType  String
-  referenceId    String
-  metadata       Json?
-  createdAt      DateTime @default(now())
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  @@index([organizationId, createdAt])
-  @@index([referenceType, referenceId])
-}
-
-model ApiKey {
-  id             String    @id @default(cuid())
-  organizationId String
-  projectId      String
-  createdById    String
-  name           String
-  prefix         String
-  keyHash        String
-  lastUsedAt     DateTime?
-  expiresAt      DateTime?
-  revokedAt      DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdBy      User @relation(fields: [createdById], references: [id])
-  scopes         ApiKeyScope[]
-  @@index([organizationId])
-  @@index([projectId])
-  @@index([prefix])
-}
-
-model ApiKeyScope {
-  id      String @id @default(cuid())
-  apiKeyId String
-  scope   String
-  apiKey  ApiKey @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
-  @@unique([apiKeyId, scope])
-}
-
-model Resource {
-  id             String         @id @default(cuid())
-  organizationId String
-  projectId      String
-  type           String
-  provider       String
-  externalId     String?
-  status         ResourceStatus @default(ACTIVE)
-  metadata       Json?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project        Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  @@index([organizationId])
-  @@index([projectId])
-  @@index([type])
+enum CouponType {
+  FIXED
+  PERCENTAGE
 }
 
 model Coupon {
@@ -441,32 +251,113 @@ model Coupon {
   active         Boolean    @default(true)
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
-  redemptions    CouponRedemption[]
 }
 
 model CouponRedemption {
-  id             String       @id @default(cuid())
+  id             String   @id @default(cuid())
   couponId       String
   organizationId String
   invoiceId      String?
-  redeemedAt     DateTime     @default(now())
-  coupon         Coupon       @relation(fields: [couponId], references: [id])
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  redeemedAt     DateTime @default(now())
+
   @@unique([couponId, organizationId])
+  @@index([organizationId])
+}
+
+model WebhookEvent {
+  id             String       @id @default(cuid())
+  organizationId String
+  idempotencyKey String       @unique // Identidade protegida / Idempotência
+  provider       String
+  type           String
+  payload        Json
+  status         String       @default("PENDING") // PENDING, PROCESSED, FAILED
+  createdAt      DateTime     @default(now())
+
   @@index([organizationId])
 }
 
 model AuditLog {
   id             String       @id @default(cuid())
   organizationId String
-  actorId        String?
+  userId         String?
   action         String
-  resourceType   String
-  resourceId     String?
-  before         Json?
-  after          Json?
-  metadata       Json?
+  resource       String
+  oldValue       Json?
+  newValue       Json?
+  // Append-only
   createdAt      DateTime     @default(now())
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  @@index([organizationId, createdAt])
+
+  @@index([organizationId])
+}
+
+// ----------------------------------------------------------------------
+// Core Billing Entities: Products, Meters, Plans, Prices, Entitlements
+// ----------------------------------------------------------------------
+
+model Product {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  Meters      Meter[]
+}
+
+model Meter {
+  id          String   @id @default(cuid())
+  productId   String
+  slug        String   @unique
+  name        String
+  unit        String
+  aggregation String   @default("SUM")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  Product     Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+}
+
+model Plan {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  name        String
+  description String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  Versions    PlanVersion[]
+}
+
+model PlanVersion {
+  id           String        @id @default(cuid())
+  planId       String
+  version      Int
+  status       String        @default("ACTIVE")
+  effectiveAt  DateTime      @default(now())
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  Plan         Plan          @relation(fields: [planId], references: [id], onDelete: Restrict)
+  Prices       Price[]
+  Entitlements Entitlement[]
+}
+
+model Price {
+  id              String      @id @default(cuid())
+  planVersionId   String
+  meterId         String?     // Null means base subscription price
+  currency        String      @default("USD")
+  unitAmount      BigInt
+  billingInterval String      @default("MONTH")
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  PlanVersion     PlanVersion @relation(fields: [planVersionId], references: [id], onDelete: Restrict)
+}
+
+model Entitlement {
+  id            String      @id @default(cuid())
+  planVersionId String
+  meterId       String?     // The resource type/meter this entitles
+  limit         BigInt      // The included amount
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  PlanVersion   PlanVersion @relation(fields: [planVersionId], references: [id], onDelete: Restrict)
 }

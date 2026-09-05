@@ -1,8 +1,12 @@
-import { Controller, Param, Post } from "@nestjs/common";
-import { BillingService } from "./billing.service";
-@Controller("billing")
+import { Controller, Post, Param } from '@nestjs/common';
+import { BillingService } from './billing.service';
+
+@Controller('api/billing')
 export class BillingController {
-  constructor(private readonly service: BillingService) {}
-  @Post("cycles/:cycleId/rate")
-  rate(@Param("cycleId") cycleId: string) { return this.service.rateCycle(cycleId); }
+  constructor(private readonly billingService: BillingService) {}
+
+  @Post('cycles/:cycleId/rate')
+  async rateCycle(@Param('cycleId') cycleId: string) {
+    return this.billingService.rateCycle(cycleId);
+  }
 }

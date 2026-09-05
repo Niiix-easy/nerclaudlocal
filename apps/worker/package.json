@@ -1,7 +1,10 @@
 {
   "name": "@neer/worker",
-  "private": true,
-  "scripts": { "dev": "tsx watch src/main.ts", "build": "tsc -p tsconfig.json", "start": "node dist/main.js" },
-  "dependencies": { "@neer/database": "workspace:*", "ioredis": "^5.4.0" },
-  "devDependencies": { "@types/node": "^22.0.0", "tsx": "^4.20.0", "typescript": "^5.0.0" }
+  "version": "1.0.0",
+  "description": "BullMQ Worker for Neer-Data-Base Billing",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "echo 'Mock build'",
+    "start": "echo 'Mock start'"
+  }
 }

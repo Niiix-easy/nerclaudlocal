@@ -1,12 +1,20 @@
-import { Controller, Get, Param, Query } from "@nestjs/common";
-import { InvoicesService } from "./invoices.service";
-@Controller("invoices")
+import { Controller, Get, Param, Query } from '@nestjs/common';
+import { InvoicesService } from './invoices.service';
+
+@Controller('api/invoices')
 export class InvoicesController {
-  constructor(private readonly service: InvoicesService) {}
+  constructor(private readonly invoicesService: InvoicesService) {}
+
   @Get()
-  list(@Query("organizationId") organizationId: string) { return this.service.list(organizationId); }
-  @Get(":id")
-  get(@Param("id") id: string, @Query("organizationId") organizationId: string) {
-    return this.service.get(organizationId, id);
+  async getInvoices(@Query('organizationId') organizationId: string) {
+    return this.invoicesService.getInvoices(organizationId);
+  }
+
+  @Get(':id')
+  async getInvoice(
+      @Param('id') id: string,
+      @Query('organizationId') organizationId: string
+  ) {
+    return this.invoicesService.getInvoice(id, organizationId);
   }
 }

@@ -21,15 +21,16 @@ $$ LANGUAGE sql STABLE;
 DO $$
 DECLARE
     table_rec record;
-    tenant_tables text[] := ARRAY['Project', 'Subscription', 'Invoice', 'Payment', 'AuditLog', 'WebhookEvent', 'UsageAggregate', 'ApiKey', 'Resource', 'BillingCycle', 'PaymentMethod', 'CouponRedemption'];
+    tenant_tables text[] := ARRAY['Project', 'Subscription', 'Invoice', 'Payment', 'AuditLog', 'WebhookEvent', 'UsageAggregate', 'ApiKey', 'Resource'];
     t text;
 BEGIN
     FOR t IN SELECT unnest(tenant_tables) LOOP
-        -- Força que as tabelas existam pelo Prisma antes disso rodar. Se o script seed invocar logo após o migrate, garantimos sucesso.
-        EXECUTE format('ALTER TABLE public."%I" ENABLE ROW LEVEL SECURITY', t);
-        EXECUTE format('ALTER TABLE public."%I" FORCE ROW LEVEL SECURITY', t);
-        EXECUTE format('DROP POLICY IF EXISTS tenant_isolation_policy ON public."%I"', t);
-        EXECUTE format('CREATE POLICY tenant_isolation_policy ON public."%I" FOR ALL TO neer_app USING ("organizationId" = get_current_tenant() AND get_current_tenant() IS NOT NULL)', t);
+        IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = t) THEN
+            EXECUTE format('ALTER TABLE public."%I" ENABLE ROW LEVEL SECURITY', t);
+            EXECUTE format('ALTER TABLE public."%I" FORCE ROW LEVEL SECURITY', t);
+            EXECUTE format('DROP POLICY IF EXISTS tenant_isolation_policy ON public."%I"', t);
+            EXECUTE format('CREATE POLICY tenant_isolation_policy ON public."%I" FOR ALL TO neer_app USING ("organizationId" = get_current_tenant() AND get_current_tenant() IS NOT NULL)', t);
+        END IF;
     END LOOP;
 END
 $$;

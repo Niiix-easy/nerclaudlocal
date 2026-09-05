@@ -1,49 +1,41 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { prisma } from "@neer/database";
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 @Injectable()
 export class SubscriptionsService {
-  async create(organizationId: string, planSlug: string) {
-    const plan = await prisma.plan.findUnique({ where: { slug: planSlug } });
-    if (!plan) throw new NotFoundException("Plan not found");
-
-    const existing = await prisma.subscription.findFirst({
-      where: { organizationId, status: { in: ["ACTIVE", "TRIALING", "PAST_DUE"] } }
-    });
-    if (existing) throw new BadRequestException("Organization already has an active subscription");
-
-    const start = new Date();
-    const end = new Date(start);
-    end.setMonth(end.getMonth() + 1);
-
-    return prisma.$transaction(async tx => {
-      const subscription = await tx.subscription.create({
-        data: {
-          organizationId,
-          planId: plan.id,
-          currency: "USD",
-          currentPeriodStart: start,
-          currentPeriodEnd: end
-        }
+  async getSubscriptions(organizationId: string) {
+      return prisma.subscription.findMany({
+          where: { organizationId }
       });
-
-      await tx.billingCycle.create({
-        data: {
-          organizationId,
-          subscriptionId: subscription.id,
-          periodStart: start,
-          periodEnd: end
-        }
-      });
-
-      return subscription;
-    });
   }
 
-  async list(organizationId: string) {
-    return prisma.subscription.findMany({
-      where: { organizationId },
-      include: { plan: true, cycles: true }
-    });
+  async createSubscription(data: { organizationId: string; planVersionId: string }) {
+      // 1. Create Subscription
+      const sub = await prisma.subscription.create({
+          data: {
+              organizationId: data.organizationId,
+              planVersionId: data.planVersionId,
+              status: 'ACTIVE'
+          }
+      });
+
+      // 2. Initialize first Billing Cycle
+      const now = new Date();
+      const nextMonth = new Date(now);
+      nextMonth.setMonth(now.getMonth() + 1);
+
+      await prisma.billingCycle.create({
+          data: {
+              organizationId: data.organizationId,
+              subscriptionId: sub.id,
+              periodStart: now,
+              periodEnd: nextMonth,
+              status: 'OPEN'
+          }
+      });
+
+      return sub;
   }
 }

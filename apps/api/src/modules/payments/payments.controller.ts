@@ -1,19 +1,17 @@
-import { Body, Controller, Post } from "@nestjs/common";
-import { IsString } from "class-validator";
-import { PaymentsService } from "./payments.service";
+import { Controller, Post, Body } from '@nestjs/common';
+import { PaymentsService } from './payments.service';
 
-class CreatePaymentDto {
-  @IsString() organizationId!: string;
-  @IsString() invoiceId!: string;
-  @IsString() provider!: string;
-  @IsString() providerId!: string;
-}
-
-@Controller("payments")
+@Controller('api/payments')
 export class PaymentsController {
-  constructor(private readonly service: PaymentsService) {}
+  constructor(private readonly paymentsService: PaymentsService) {}
+
   @Post()
-  create(@Body() dto: CreatePaymentDto) {
-    return this.service.create(dto.organizationId, dto.invoiceId, dto.provider, dto.providerId);
+  async processPayment(@Body() data: {
+      organizationId: string;
+      invoiceId: string;
+      amount: number;
+      method: string;
+  }) {
+    return this.paymentsService.processPayment(data);
   }
 }
