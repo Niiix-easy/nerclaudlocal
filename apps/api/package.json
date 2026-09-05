@@ -1,0 +1,10 @@
+{
+  "name": "@neer/api",
+  "version": "1.0.0",
+  "description": "NestJS Core API for Neer-Data-Base",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "echo 'Mock build'",
+    "start": "echo 'Mock start'"
+  }
+}

@@ -5,7 +5,7 @@ node_modules/
 # Dados persistentes (Postgres, MinIO) — bind mount local. Se você mudou
 # DATA_PATH no .env para outro nome de pasta, adicione-a aqui também
 # (gitignore não expande variáveis de ambiente).
-neercloud-data/
+neer-data-base-data/
 
 # Ambiente
 .env
